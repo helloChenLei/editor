@@ -281,13 +281,25 @@ func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 
 // generateSharePageHTML 生成分享页面 HTML
 func generateSharePageHTML(share Share) string {
+	// 提取标题：从 Markdown 内容中找第一个 # 开头的标题
+	title := extractTitleFromMarkdown(share.Content)
+	if title == "" {
+		title = "分享的文章"
+	}
+
+	// 提取描述：从内容中提取前 150 个字符作为描述
+	description := extractDescriptionFromMarkdown(share.Content)
+	if description == "" {
+		description = "通过公众号排版器分享的文章"
+	}
+
 	return fmt.Sprintf(`<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>分享的文章 - 公众号排版器</title>
-  <meta name="description" content="通过公众号排版器分享的文章">
+  <title>%s</title>
+  <meta name="description" content="%s">
   
   <!-- Markdown 渲染库 -->
   <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
@@ -475,27 +487,6 @@ func generateSharePageHTML(share Share) string {
 </head>
 <body>
   <div id="app">
-    <header class="header">
-      <a href="/" class="logo">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="20" height="20">
-          <rect width="32" height="32" rx="6" fill="#0066FF"/>
-          <path d="M6 10 L6 22 L9 22 L9 15 L13 20 L17 15 L17 22 L20 22 L20 10 L16 10 L13 14 L10 10 Z" fill="white"/>
-          <rect x="6" y="24" width="20" height="2" rx="1" fill="white" opacity="0.7"/>
-        </svg>
-        <span>公众号排版器</span>
-      </a>
-      <div class="header-actions">
-        <span class="style-badge">%s</span>
-        <button class="btn" @click="copyContent">
-          <span v-if="copySuccess">✓</span>
-          <span class="btn-text">{{ copySuccess ? '已复制' : '复制内容' }}</span>
-        </button>
-        <a href="/" class="btn btn-secondary">
-          <span>创作</span>
-        </a>
-      </div>
-    </header>
-    
     <main class="content">
       <div v-if="loading" class="loading">
         <div class="spinner"></div>
@@ -512,13 +503,6 @@ func generateSharePageHTML(share Share) string {
       
       <div v-else v-html="renderedContent"></div>
     </main>
-    
-    <footer class="footer">
-      <p class="footer-text">
-        由 <a href="/" target="_blank">公众号排版器</a> 生成 · 
-        <a href="/" target="_blank">去创作</a>
-      </p>
-    </footer>
   </div>
 
   <script src="/styles.js"></script>
@@ -672,5 +656,138 @@ func generateSharePageHTML(share Share) string {
     }).mount('#app');
   </script>
 </body>
-</html>`, share.Style, share.Content, share.Style)
+</html>`, title, description, share.Content, share.Style)
+}
+
+// extractTitleFromMarkdown 从 Markdown 内容中提取标题
+func extractTitleFromMarkdown(content string) string {
+	// 查找第一个 # 开头的标题
+	lines := strings.Split(content, "\n")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		// 匹配 # 标题、## 标题等
+		if strings.HasPrefix(line, "#") {
+			// 去掉 # 和空格
+			title := strings.TrimLeft(line, "#")
+			title = strings.TrimSpace(title)
+			if title != "" {
+				return title
+			}
+		}
+	}
+	return ""
+}
+
+// extractDescriptionFromMarkdown 从 Markdown 内容中提取描述
+func extractDescriptionFromMarkdown(content string) string {
+	// 移除代码块
+	content = removeCodeBlocks(content)
+
+	// 按行分割，找第一个非空、非标题、非特殊标记的行
+	lines := strings.Split(content, "\n")
+	var description strings.Builder
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+
+		// 跳过空行
+		if line == "" {
+			continue
+		}
+
+		// 跳过标题行
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+
+		// 跳过特殊 Markdown 标记
+		if strings.HasPrefix(line, "!") || strings.HasPrefix(line, "[") ||
+			strings.HasPrefix(line, "-") || strings.HasPrefix(line, "*") ||
+			strings.HasPrefix(line, ">") || strings.HasPrefix(line, "|") ||
+			strings.HasPrefix(line, "```") {
+			continue
+		}
+
+		// 移除 Markdown 链接标记 [text](url) -> text
+		line = removeMarkdownLinks(line)
+
+		// 移除其他 Markdown 标记
+		line = strings.ReplaceAll(line, "**", "")
+		line = strings.ReplaceAll(line, "*", "")
+		line = strings.ReplaceAll(line, "__", "")
+		line = strings.ReplaceAll(line, "_", "")
+		line = strings.ReplaceAll(line, "`", "")
+
+		if line != "" {
+			description.WriteString(line)
+			// 如果描述已经足够长，截断并添加省略号
+			if description.Len() >= 150 {
+				truncated := description.String()[:150]
+				// 确保不在单词中间截断
+				lastSpace := strings.LastIndex(truncated, " ")
+				if lastSpace > 100 {
+					return truncated[:lastSpace] + "..."
+				}
+				return truncated + "..."
+			}
+			description.WriteString(" ")
+		}
+	}
+
+	result := strings.TrimSpace(description.String())
+	if len(result) > 150 {
+		return result[:150] + "..."
+	}
+	return result
+}
+
+// removeCodeBlocks 移除 Markdown 代码块
+func removeCodeBlocks(content string) string {
+	var result strings.Builder
+	inCodeBlock := false
+	lines := strings.Split(content, "\n")
+
+	for _, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "```") {
+			inCodeBlock = !inCodeBlock
+			continue
+		}
+		if !inCodeBlock {
+			result.WriteString(line)
+			result.WriteString("\n")
+		}
+	}
+
+	return result.String()
+}
+
+// removeMarkdownLinks 移除 Markdown 链接，保留链接文本
+func removeMarkdownLinks(line string) string {
+	// 简单的正则替换：将 [text](url) 替换为 text
+	for {
+		start := strings.Index(line, "[")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(line[start:], "]")
+		if end == -1 {
+			break
+		}
+		end += start
+
+		// 检查后面是否有 (url)
+		if end+1 < len(line) && line[end+1] == '(' {
+			urlEnd := strings.Index(line[end+1:], ")")
+			if urlEnd != -1 {
+				urlEnd += end + 1
+				// 提取文本并替换
+				text := line[start+1 : end]
+				line = line[:start] + text + line[urlEnd+1:]
+				continue
+			}
+		}
+		break
+	}
+	return line
 }
