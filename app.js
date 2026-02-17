@@ -570,7 +570,14 @@ const editorApp = createApp({
       // 文章历史记录
       articleHistory: [],           // 历史文章列表
       showHistoryPanel: false,      // 侧边栏显示状态
-      currentArticleId: null        // 当前编辑的文章ID（用于防止重复保存）
+      currentArticleId: null,       // 当前编辑的文章ID（用于防止重复保存）
+      
+      // 分享功能
+      sharing: false,               // 是否正在分享
+      shareUrl: null,               // 分享链接
+      shareError: null,             // 分享错误信息
+      shareServerUrl: 'http://localhost:8080',  // 分享服务器地址
+      shareCopySuccess: false       // 分享链接复制成功状态
     };
   },
 
@@ -2851,6 +2858,80 @@ const markdown = \`![图片](img://\${imageId})\`;
 
       // 往年
       return `${year}-${month}-${day}`;
+    },
+
+    // ==================== 分享功能 ====================
+
+    // 分享内容
+    async shareContent() {
+      if (!this.markdownInput || !this.markdownInput.trim()) {
+        this.showToast('内容为空，无法分享', 'error');
+        return;
+      }
+
+      this.sharing = true;
+      this.shareError = null;
+
+      try {
+        const response = await fetch(`${this.shareServerUrl}/api/share`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: this.markdownInput,
+            style: this.currentStyle
+          })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || '分享失败');
+        }
+
+        this.shareUrl = `${this.shareServerUrl}/s/${data.id}`;
+        this.showToast('分享成功！链接已生成', 'success');
+
+        // 复制到剪贴板
+        await this.copyShareUrl();
+      } catch (error) {
+        console.error('分享失败:', error);
+        this.shareError = error.message;
+        this.showToast(`分享失败: ${error.message}`, 'error');
+      } finally {
+        this.sharing = false;
+      }
+    },
+
+    // 复制分享链接
+    async copyShareUrl() {
+      if (!this.shareUrl) return;
+
+      try {
+        await navigator.clipboard.writeText(this.shareUrl);
+        this.shareCopySuccess = true;
+        this.showToast('链接已复制到剪贴板', 'success');
+        
+        setTimeout(() => {
+          this.shareCopySuccess = false;
+        }, 2000);
+      } catch (err) {
+        console.error('复制链接失败:', err);
+        // 降级方案
+        const textarea = document.createElement('textarea');
+        textarea.value = this.shareUrl;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        this.shareCopySuccess = true;
+        this.showToast('链接已复制到剪贴板', 'success');
+        
+        setTimeout(() => {
+          this.shareCopySuccess = false;
+        }, 2000);
+      }
     }
   }
 });
