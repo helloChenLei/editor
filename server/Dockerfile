@@ -3,11 +3,16 @@ FROM golang:1.21-alpine AS builder
 
 WORKDIR /app
 
-# 安装依赖
-RUN apk add --no-cache git
+# 安装依赖（git 和 gcc 是必需的，gcc 用于 CGO）
+RUN apk add --no-cache git gcc musl-dev
 
 # 复制依赖文件
 COPY go.mod go.sum ./
+
+# 配置国内 Go 代理
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GOSUMDB=sum.golang.google.cn
+
 RUN go mod download
 
 # 复制源码

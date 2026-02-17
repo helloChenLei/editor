@@ -60,7 +60,7 @@ backup_remote() {
     print_title "1. 备份远程代码"
     TIMESTAMP=$(date +%Y%m%d_%H%M%S)
     BACKUP_DIR="$REMOTE_DIR/backup/$TIMESTAMP"
-    
+
     ssh "$REMOTE_HOST" "
         mkdir -p $BACKUP_DIR
         if [ -d $REMOTE_DIR/frontend ]; then
@@ -71,9 +71,14 @@ backup_remote() {
             cp -r $REMOTE_DIR/server $BACKUP_DIR/
             echo '后端代码已备份'
         fi
+        # 备份 Nginx 配置
+        if [ -f /etc/nginx/sites-available/md-editor ]; then
+            cp /etc/nginx/sites-available/md-editor $BACKUP_DIR/nginx.conf
+            echo 'Nginx 配置已备份'
+        fi
         echo '$BACKUP_DIR'
     "
-    
+
     print_success "备份完成: $BACKUP_DIR"
 }
 
@@ -251,6 +256,45 @@ deploy_backend() {
     print_success "后端部署完成"
 }
 
+# 部署 Nginx 配置
+deploy_nginx() {
+    print_title "部署 Nginx 配置"
+
+    # 检查本地是否有 nginx 配置文件
+    if [ ! -f "$LOCAL_DIR/nginx/md-editor.conf" ]; then
+        print_warning "本地 nginx/md-editor.conf 不存在，跳过 Nginx 部署"
+        print_info "如需管理 Nginx 配置，请先从服务器拉取："
+        print_info "  mkdir -p nginx && scp $REMOTE_HOST:/etc/nginx/sites-available/md-editor nginx/"
+        return
+    fi
+
+    print_info "同步 Nginx 配置到服务器..."
+
+    # 同步配置
+    scp "$LOCAL_DIR/nginx/md-editor.conf" "$REMOTE_HOST:/tmp/md-editor.conf.new"
+
+    # 测试并重载
+    ssh "$REMOTE_HOST" "
+        # 备份当前配置
+        cp /etc/nginx/sites-available/md-editor /etc/nginx/sites-available/md-editor.backup.$(date +%Y%m%d_%H%M%S)
+
+        # 应用新配置
+        mv /tmp/md-editor.conf.new /etc/nginx/sites-available/md-editor
+
+        # 测试配置语法
+        if nginx -t 2>&1 | grep -q 'syntax is ok'; then
+            nginx -s reload
+            echo 'Nginx 配置已更新并重载'
+        else
+            echo 'Nginx 配置语法错误，已回滚'
+            cp /etc/nginx/sites-available/md-editor.backup.* /etc/nginx/sites-available/md-editor
+            exit 1
+        fi
+    "
+
+    print_success "Nginx 配置部署完成"
+}
+
 # 验证部署
 verify_deployment() {
     print_title "4. 验证部署"
@@ -287,9 +331,10 @@ show_usage() {
     echo "用法: $0 [选项]"
     echo ""
     echo "选项:"
-    echo "  all       部署前端+后端（默认）"
+    echo "  all       部署前端+后端+Nginx（默认）"
     echo "  frontend  仅部署前端"
     echo "  backend   仅部署后端"
+    echo "  nginx     仅部署 Nginx 配置"
     echo "  verify    仅验证部署状态"
     echo "  backup    仅备份远程代码"
     echo "  help      显示此帮助"
@@ -298,6 +343,7 @@ show_usage() {
     echo "  $0              # 完整部署"
     echo "  $0 frontend     # 仅更新前端"
     echo "  $0 backend      # 仅更新后端"
+    echo "  $0 nginx        # 仅更新 Nginx 配置"
 }
 
 # 主函数
@@ -311,6 +357,7 @@ main() {
             backup_remote
             deploy_frontend
             deploy_backend
+            deploy_nginx
             verify_deployment
             ;;
         frontend)
@@ -324,6 +371,10 @@ main() {
             backup_remote
             deploy_backend
             verify_deployment
+            ;;
+        nginx)
+            check_connection
+            deploy_nginx
             ;;
         verify)
             check_connection
