@@ -32,6 +32,7 @@
 ### 🚀 强大功能
 - **实时预览**：左侧编辑，右侧即时查看效果
 - **一键复制**：直接粘贴到公众号编辑器，格式完美保留
+- **🔗 分享链接**（NEW）：生成分享链接，发送给朋友查看
 - **智能粘贴**：支持从飞书、Notion、Word 等富文本应用直接粘贴
 - **图片拖拽**：支持拖拽图片文件到编辑器
 - **样式收藏**：收藏常用样式，快速切换
@@ -47,6 +48,38 @@
 3. 选择喜欢的样式主题
 4. 点击「复制到公众号」
 5. 粘贴到微信公众号编辑器
+
+### 分享功能
+
+生成分享链接，发送给朋友查看：
+
+1. 编辑好内容后，点击预览面板右上角的 **"分享"** 按钮
+2. 等待链接生成
+3. 复制链接发送给朋友
+4. 朋友打开链接即可查看渲染后的文章
+
+> **注意**：分享功能需要启动后端服务，详见 [SHARE_FEATURE.md](SHARE_FEATURE.md)
+
+### 本地运行
+```bash
+# 克隆仓库
+git clone https://github.com/alchaincyf/huasheng_editor.git
+
+# 进入目录
+cd huasheng_editor
+
+# 启动前端服务
+python3 -m http.server 8080
+# 或使用提供的脚本
+./start.sh
+
+# 访问 http://localhost:8080
+
+# 启动后端服务（分享功能）
+cd server
+./start.sh
+# 访问 http://localhost:8080
+```
 
 ### 本地运行
 ```bash
@@ -88,7 +121,13 @@ python3 -m http.server 8080
 ├── start.sh         # 启动脚本
 ├── README.md        # 项目说明
 ├── CLAUDE.md        # 技术文档
+├── SHARE_FEATURE.md # 分享功能说明
 └── LICENSE          # 开源许可证
+├── server/          # Go 后端服务（分享功能）
+│   ├── main.go      # 主程序
+│   ├── go.mod       # Go 模块配置
+│   ├── Dockerfile   # Docker 配置
+│   └── README.md    # 后端说明
 ```
 
 ## 💡 核心特性
