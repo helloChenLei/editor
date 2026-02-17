@@ -96,16 +96,14 @@ deploy_frontend() {
     # 确保导航页是 index.html，编辑器是 editor.html
     ssh "$REMOTE_HOST" "
         cd $REMOTE_DIR/frontend
-        # 如果 editor.html 不存在但 index.html 存在且大于 50KB（编辑器页面）
-        if [ ! -f editor.html ] && [ -f index.html ]; then
-            SIZE=\$(stat -f%z index.html 2>/dev/null || stat -c%s index.html)
-            if [ \$SIZE -gt 50000 ]; then
-                mv index.html editor.html
-                echo '编辑器页面重命名为 editor.html'
-            fi
+        
+        # 从 index.html 复制 editor.html（admin.md.foolgry.top 需要）
+        if [ -f index.html ]; then
+            cp index.html editor.html
+            echo '编辑器页面已复制为 editor.html'
         fi
         
-        # 如果 index.html 不存在或太小，创建导航页
+        # 如果 index.html 不存在或太小（被覆盖/损坏），重新创建导航页
         if [ ! -f index.html ] || [ \$(stat -f%z index.html 2>/dev/null || stat -c%s index.html) -lt 10000 ]; then
             cat > index.html << 'NAVEOF'
 <!DOCTYPE html>
