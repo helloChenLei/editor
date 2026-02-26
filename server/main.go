@@ -4,10 +4,13 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"html"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,6 +35,8 @@ type CreateShareRequest struct {
 
 var db *sql.DB
 
+var citeMarkerPattern = regexp.MustCompile(`\x{E200}cite\x{E202}[^\x{E201}]*\x{E201}`)
+
 func main() {
 	// 初始化数据库
 	if err := initDB(); err != nil {
@@ -41,14 +46,14 @@ func main() {
 
 	// 设置路由
 	mux := http.NewServeMux()
-	
+
 	// API 路由
 	mux.HandleFunc("/api/share", handleCreateShare)
 	mux.HandleFunc("/api/share/", handleGetShare)
-	
+
 	// 分享页面路由
 	mux.HandleFunc("/s/", handleSharePage)
-	
+
 	// 静态文件服务
 	staticDir := filepath.Join("..", ".")
 	fileServer := http.FileServer(http.Dir(staticDir))
@@ -69,13 +74,13 @@ func main() {
 // initDB 初始化 SQLite 数据库
 func initDB() error {
 	var err error
-	
+
 	// 确保数据库目录存在
 	dbDir := "./data"
 	if err := os.MkdirAll(dbDir, 0755); err != nil {
 		return fmt.Errorf("创建数据库目录失败: %w", err)
 	}
-	
+
 	dbPath := filepath.Join(dbDir, "shares.db")
 	db, err = sql.Open("sqlite3", dbPath)
 	if err != nil {
@@ -115,7 +120,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 			"http://localhost:8080",
 			"http://localhost:3000",
 		}
-		
+
 		// 检查是否允许的域名
 		for _, allowed := range allowedOrigins {
 			if origin == allowed {
@@ -123,19 +128,19 @@ func corsMiddleware(next http.Handler) http.Handler {
 				break
 			}
 		}
-		
+
 		// 允许的头部和方法
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Max-Age", "86400") // 24小时缓存预检结果
-		
+
 		// 处理预检请求
 		if r.Method == "OPTIONS" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
-		
+
 		next.ServeHTTP(w, r)
 	})
 }
@@ -281,25 +286,29 @@ func respondJSON(w http.ResponseWriter, status int, data interface{}) {
 
 // generateSharePageHTML 生成分享页面 HTML
 func generateSharePageHTML(share Share) string {
+	cleanContent := stripCitationMarkers(share.Content)
+
 	// 提取标题：从 Markdown 内容中找第一个 # 开头的标题
-	title := extractTitleFromMarkdown(share.Content)
+	title := extractTitleFromMarkdown(cleanContent)
 	if title == "" {
 		title = "分享的文章"
 	}
 
 	// 提取描述：从内容中提取前 150 个字符作为描述
-	description := extractDescriptionFromMarkdown(share.Content)
+	description := extractDescriptionFromMarkdown(cleanContent)
 	if description == "" {
 		description = "通过公众号排版器分享的文章"
 	}
 
-	return fmt.Sprintf(`<!DOCTYPE html>
+	const pageTemplate = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>%s</title>
-  <meta name="description" content="%s">
+  <title>__WX_EDITOR_TITLE__</title>
+  <meta name="description" content="__WX_EDITOR_DESCRIPTION__">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="alternate icon" href="/favicon.svg">
   
   <!-- Markdown 渲染库 -->
   <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
@@ -307,6 +316,9 @@ func generateSharePageHTML(share Share) string {
   <!-- 代码高亮库 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
   <script src="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/es/highlight.min.js"></script>
+  
+  <!-- Mermaid 图表库 -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   
   <!-- Vue.js -->
   <script src="https://cdn.jsdelivr.net/npm/vue@3.4.15/dist/vue.global.prod.js"></script>
@@ -431,7 +443,7 @@ func generateSharePageHTML(share Share) string {
       height: 40px;
       border: 3px solid var(--color-border);
       border-top-color: var(--color-accent);
-      border-radius: 50%%;
+      border-radius: 50%;
       animation: spin 1s linear infinite;
       margin-bottom: 16px;
     }
@@ -466,6 +478,22 @@ func generateSharePageHTML(share Share) string {
     .error-icon {
       font-size: 48px;
       margin-bottom: 16px;
+    }
+    
+    /* Mermaid 图表样式 */
+    .mermaid {
+      background: #fff !important;
+      border-radius: 8px;
+      margin: 20px 0;
+      padding: 20px;
+      text-align: center;
+      overflow-x: auto;
+    }
+    
+    .mermaid svg {
+      max-width: 100%;
+      height: auto;
+      display: inline-block;
     }
     
     @media (max-width: 768px) {
@@ -515,8 +543,8 @@ func generateSharePageHTML(share Share) string {
           loading: true,
           error: null,
           renderedContent: '',
-          markdownContent: %q,
-          style: %q,
+          markdownContent: __WX_EDITOR_MARKDOWN_CONTENT__,
+          style: __WX_EDITOR_STYLE__,
           copySuccess: false,
           md: null
         };
@@ -534,7 +562,12 @@ func generateSharePageHTML(share Share) string {
             linkify: true,
             typographer: false,
             highlight: function (str, lang) {
-              const dots = '<div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%%; background: #27c93f;"></span></div>';
+              // Mermaid 图表特殊处理
+              if (lang && ['mermaid', 'flowchart', 'graph', 'sequenceDiagram', 'gantt', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'pie', 'gitGraph', 'requirementDiagram'].includes(lang)) {
+                return '<div class="mermaid" style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">' + str + '</div>';
+              }
+              
+              const dots = '<div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div>';
               
               let codeContent = '';
               if (lang && typeof hljs !== 'undefined' && hljs.getLanguage(lang)) {
@@ -552,16 +585,54 @@ func generateSharePageHTML(share Share) string {
           });
         },
         
-        renderContent() {
+        async renderContent() {
           try {
             let html = this.md.render(this.markdownContent);
             html = this.applyInlineStyles(html);
             this.renderedContent = html;
             this.loading = false;
+            
+            // 等待 DOM 更新后渲染 Mermaid 图表
+            await this.$nextTick();
+            this.renderMermaid();
           } catch (err) {
             console.error('渲染失败:', err);
             this.error = '内容渲染失败';
             this.loading = false;
+          }
+        },
+        
+        renderMermaid() {
+          if (typeof mermaid !== 'undefined') {
+            try {
+              mermaid.initialize({
+                startOnLoad: false,
+                theme: 'default',
+                securityLevel: 'loose',
+                flowchart: {
+                  useMaxWidth: true,
+                  htmlLabels: true,
+                  curve: 'basis'
+                },
+                sequence: {
+                  useMaxWidth: true,
+                  wrap: true
+                },
+                gantt: {
+                  useMaxWidth: true
+                }
+              });
+              
+              // 查找所有未渲染的 mermaid 图表
+              const mermaidElements = document.querySelectorAll('.mermaid:not([data-processed])');
+              if (mermaidElements.length > 0) {
+                mermaid.run({
+                  querySelector: '.mermaid'
+                });
+              }
+            } catch (err) {
+              console.error('Mermaid 渲染失败:', err);
+            }
           }
         },
         
@@ -656,7 +727,20 @@ func generateSharePageHTML(share Share) string {
     }).mount('#app');
   </script>
 </body>
-</html>`, title, description, share.Content, share.Style)
+</html>`
+
+	replacer := strings.NewReplacer(
+		"__WX_EDITOR_TITLE__", html.EscapeString(title),
+		"__WX_EDITOR_DESCRIPTION__", html.EscapeString(description),
+		"__WX_EDITOR_MARKDOWN_CONTENT__", strconv.Quote(cleanContent),
+		"__WX_EDITOR_STYLE__", strconv.Quote(share.Style),
+	)
+
+	return replacer.Replace(pageTemplate)
+}
+
+func stripCitationMarkers(content string) string {
+	return citeMarkerPattern.ReplaceAllString(content, "")
 }
 
 // extractTitleFromMarkdown 从 Markdown 内容中提取标题
