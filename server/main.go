@@ -37,6 +37,17 @@ var db *sql.DB
 
 var citeMarkerPattern = regexp.MustCompile(`\x{E200}cite\x{E202}[^\x{E201}]*\x{E201}`)
 
+const listPagePassword = "XOu6rt5uK9BIX"
+const listPasswordHeader = "X-List-Password"
+
+type ShareListItem struct {
+	ID        string    `json:"id"`
+	Title     string    `json:"title"`
+	Style     string    `json:"style"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
 func main() {
 	// 初始化数据库
 	if err := initDB(); err != nil {
@@ -50,9 +61,11 @@ func main() {
 	// API 路由
 	mux.HandleFunc("/api/share", handleCreateShare)
 	mux.HandleFunc("/api/share/", handleGetShare)
+	mux.HandleFunc("/api/shares", handleListShares)
 
 	// 分享页面路由
 	mux.HandleFunc("/s/", handleSharePage)
+	mux.HandleFunc("/list", handleListPage)
 
 	// 静态文件服务
 	staticDir := filepath.Join("..", ".")
@@ -131,7 +144,7 @@ func corsMiddleware(next http.Handler) http.Handler {
 
 		// 允许的头部和方法
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-List-Password")
 		w.Header().Set("Access-Control-Allow-Credentials", "true")
 		w.Header().Set("Access-Control-Max-Age", "86400") // 24小时缓存预检结果
 
@@ -239,6 +252,82 @@ func handleGetShare(w http.ResponseWriter, r *http.Request) {
 	respondJSON(w, http.StatusOK, share)
 }
 
+// handleListShares 获取全部分享列表（需要密码）
+func handleListShares(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	if !isListAuthorized(r) {
+		respondJSON(w, http.StatusUnauthorized, map[string]string{
+			"error": "密码错误或缺失",
+		})
+		return
+	}
+
+	rows, err := db.Query(`
+		SELECT id, content, style, created_at, updated_at
+		FROM shares
+		ORDER BY datetime(created_at) DESC
+	`)
+	if err != nil {
+		log.Printf("查询分享列表失败: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": "获取分享列表失败",
+		})
+		return
+	}
+	defer rows.Close()
+
+	items := make([]ShareListItem, 0)
+	for rows.Next() {
+		var id string
+		var content string
+		var style string
+		var createdAt time.Time
+		var updatedAt time.Time
+
+		if err := rows.Scan(&id, &content, &style, &createdAt, &updatedAt); err != nil {
+			log.Printf("扫描分享列表失败: %v", err)
+			respondJSON(w, http.StatusInternalServerError, map[string]string{
+				"error": "获取分享列表失败",
+			})
+			return
+		}
+
+		cleanContent := stripCitationMarkers(content)
+		title := extractTitleFromMarkdown(cleanContent)
+		if title == "" {
+			title = extractDescriptionFromMarkdown(cleanContent)
+		}
+		if title == "" {
+			title = "无标题"
+		}
+
+		items = append(items, ShareListItem{
+			ID:        id,
+			Title:     title,
+			Style:     style,
+			CreatedAt: createdAt,
+			UpdatedAt: updatedAt,
+		})
+	}
+
+	if err := rows.Err(); err != nil {
+		log.Printf("遍历分享列表失败: %v", err)
+		respondJSON(w, http.StatusInternalServerError, map[string]string{
+			"error": "获取分享列表失败",
+		})
+		return
+	}
+
+	respondJSON(w, http.StatusOK, map[string]interface{}{
+		"items": items,
+		"count": len(items),
+	})
+}
+
 // handleSharePage 分享页面
 func handleSharePage(w http.ResponseWriter, r *http.Request) {
 	// 提取分享 ID
@@ -272,9 +361,24 @@ func handleSharePage(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(generateSharePageHTML(share)))
 }
 
+func handleListPage(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.Write([]byte(generateListPageHTML()))
+}
+
 // generateShareID 生成分享 ID
 func generateShareID() string {
 	return uuid.New().String()[:8]
+}
+
+func isListAuthorized(r *http.Request) bool {
+	password := strings.TrimSpace(r.Header.Get(listPasswordHeader))
+	return password == listPagePassword
 }
 
 // respondJSON 返回 JSON 响应
@@ -737,6 +841,256 @@ func generateSharePageHTML(share Share) string {
 	)
 
 	return replacer.Replace(pageTemplate)
+}
+
+func generateListPageHTML() string {
+	const pageTemplate = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>分享列表</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 24px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f5f7fb;
+      color: #111827;
+    }
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .title {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .muted {
+      color: #6b7280;
+      font-size: 13px;
+    }
+    .auth {
+      padding: 32px 24px;
+      border-bottom: 1px solid #e5e7eb;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    input[type="password"] {
+      width: min(360px, 100%);
+      height: 40px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      padding: 0 12px;
+      font-size: 14px;
+    }
+    button {
+      height: 40px;
+      border: none;
+      background: #111827;
+      color: #fff;
+      border-radius: 8px;
+      padding: 0 16px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    .error {
+      color: #b91c1c;
+      font-size: 13px;
+    }
+    .list-wrap {
+      padding: 0 24px 24px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+    th, td {
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+      padding: 12px 8px;
+      font-size: 14px;
+      vertical-align: top;
+      word-break: break-word;
+    }
+    th {
+      color: #374151;
+      background: #f9fafb;
+      font-weight: 600;
+    }
+    a {
+      color: #2563eb;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .status {
+      padding: 16px 24px;
+      font-size: 14px;
+      color: #4b5563;
+    }
+    @media (max-width: 768px) {
+      body { padding: 12px; }
+      .header, .auth, .list-wrap, .status { padding-left: 14px; padding-right: 14px; }
+      th, td { font-size: 13px; padding: 10px 6px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 class="title">分享列表</h1>
+      <div class="muted">需要密码访问</div>
+    </div>
+
+    <div id="auth" class="auth">
+      <div class="muted">请输入密码后加载全部分享记录（密码会保存在当前浏览器，无过期）。</div>
+      <div class="row">
+        <input id="pwd" type="password" placeholder="请输入密码" autocomplete="off" />
+        <button id="submitBtn">进入</button>
+      </div>
+      <div id="authError" class="error"></div>
+    </div>
+
+    <div id="status" class="status">等待输入密码</div>
+    <div id="listWrap" class="list-wrap"></div>
+  </div>
+
+  <script>
+    const PASSWORD_STORAGE_KEY = "wx-editor-list-password";
+    const PASSWORD_HEADER_KEY = "X-List-Password";
+    const authEl = document.getElementById("auth");
+    const pwdEl = document.getElementById("pwd");
+    const submitBtnEl = document.getElementById("submitBtn");
+    const authErrorEl = document.getElementById("authError");
+    const statusEl = document.getElementById("status");
+    const listWrapEl = document.getElementById("listWrap");
+
+    function escapeHTML(text) {
+      return String(text || "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return "-";
+      return date.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function renderList(items) {
+      if (!Array.isArray(items) || items.length === 0) {
+        listWrapEl.innerHTML = "<div class='muted' style='padding-top: 12px;'>暂无分享记录</div>";
+        return;
+      }
+
+      const rows = items.map((item) => {
+        const id = escapeHTML(item.id);
+        const title = escapeHTML(item.title || "无标题");
+        const style = escapeHTML(item.style || "-");
+        const createdAt = escapeHTML(formatDate(item.createdAt));
+        const updatedAt = escapeHTML(formatDate(item.updatedAt));
+        return "<tr>" +
+          "<td><a href='/s/" + id + "' target='_blank' rel='noopener noreferrer'>" + id + "</a></td>" +
+          "<td>" + title + "</td>" +
+          "<td>" + style + "</td>" +
+          "<td>" + createdAt + "</td>" +
+          "<td>" + updatedAt + "</td>" +
+          "</tr>";
+      }).join("");
+
+      listWrapEl.innerHTML = "<table>" +
+        "<thead><tr><th style='width:120px;'>ID</th><th>标题</th><th style='width:140px;'>样式</th><th style='width:170px;'>创建时间</th><th style='width:170px;'>更新时间</th></tr></thead>" +
+        "<tbody>" + rows + "</tbody>" +
+        "</table>";
+    }
+
+    async function loadList(password) {
+      statusEl.textContent = "正在加载分享列表...";
+      authErrorEl.textContent = "";
+      submitBtnEl.disabled = true;
+
+      try {
+        const response = await fetch("/api/shares", {
+          headers: {
+            [PASSWORD_HEADER_KEY]: password
+          }
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error || "加载失败");
+        }
+
+        localStorage.setItem(PASSWORD_STORAGE_KEY, password);
+        authEl.style.display = "none";
+        const count = Number(data.count || 0);
+        statusEl.textContent = "共 " + count + " 条记录";
+        renderList(data.items || []);
+      } catch (error) {
+        statusEl.textContent = "加载失败";
+        authErrorEl.textContent = error && error.message ? error.message : "密码错误或网络异常";
+      } finally {
+        submitBtnEl.disabled = false;
+      }
+    }
+
+    submitBtnEl.addEventListener("click", () => {
+      const password = (pwdEl.value || "").trim();
+      if (!password) {
+        authErrorEl.textContent = "请输入密码";
+        return;
+      }
+      loadList(password);
+    });
+
+    pwdEl.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        submitBtnEl.click();
+      }
+    });
+
+    const cachedPassword = localStorage.getItem(PASSWORD_STORAGE_KEY);
+    if (cachedPassword) {
+      pwdEl.value = cachedPassword;
+      loadList(cachedPassword);
+    }
+  </script>
+</body>
+</html>`
+
+	return pageTemplate
 }
 
 func stripCitationMarkers(content string) string {

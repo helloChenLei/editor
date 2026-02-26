@@ -62,6 +62,15 @@
 
 > **注意**：分享功能需要启动后端服务，详见 [SHARE_FEATURE.md](SHARE_FEATURE.md)
 
+### 分享管理列表（/list）
+
+用于查看所有分享记录：
+
+1. 直接访问 `/list`
+2. 输入管理密码
+3. 首次成功后密码会缓存在浏览器 `localStorage`（无过期）
+4. 页面会在请求头中自动携带 `X-List-Password` 调用 `/api/shares`
+
 ### 本地运行
 ```bash
 # 克隆仓库

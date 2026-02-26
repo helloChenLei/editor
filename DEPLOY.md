@@ -21,7 +21,7 @@
     ↓
 Nginx (80/443) + SSL
     ├── md.foolgry.top/          → 导航页（公开）
-    ├── /s/* /api/*              → Go 后端（公开）
+    ├── /s/* /api/* /list        → Go 后端（公开）
     └── admin.md.foolgry.top/*   → 编辑器（需认证）
             ↓
     Docker: huasheng-editor-backend (127.0.0.1:3000)
@@ -60,6 +60,7 @@ Nginx (80/443) + SSL
 | https://md.foolgry.top | 导航页 | 公开 |
 | https://admin.md.foolgry.top | 编辑器 | 需密码认证 |
 | https://md.foolgry.top/s/{id} | 分享页面 | 公开 |
+| https://md.foolgry.top/list | 分享管理列表页 | 需页面密码 |
 
 **登录信息：**
 - 用户名：`foolgry`

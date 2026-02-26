@@ -73,7 +73,15 @@ server/
 |------|------|------|
 | `/api/share` | POST | 创建分享 |
 | `/api/share/{id}` | GET | 获取分享内容 |
+| `/api/shares` | GET | 获取全部分享列表（需 Header 密码） |
 | `/s/{id}` | GET | 分享页面 |
+| `/list` | GET | 分享管理列表页面（输入密码后查看全部） |
+
+列表接口鉴权 Header：
+
+```http
+X-List-Password: XOu6rt5uK9BIX
+```
 
 ### 数据存储
 

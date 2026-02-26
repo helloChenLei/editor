@@ -87,6 +87,38 @@ GET /api/share/{id}
 }
 ```
 
+### 获取分享列表（鉴权）
+
+```http
+GET /api/shares
+X-List-Password: <密码>
+```
+
+成功响应：
+
+```json
+{
+  "count": 2,
+  "items": [
+    {
+      "id": "abc12345",
+      "title": "文章标题",
+      "style": "wechat-default",
+      "createdAt": "2025-01-15T10:30:00Z",
+      "updatedAt": "2025-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+失败响应（401）：
+
+```json
+{
+  "error": "密码错误或缺失"
+}
+```
+
 ### 查看分享页面
 
 浏览器访问：
@@ -103,6 +135,16 @@ GET /s/{id}
 - 复制内容功能
 - 返回编辑器链接
 - favicon 资源声明（避免浏览器回退请求 `favicon.ico`）
+
+### 查看管理列表页面
+
+浏览器访问：
+
+```http
+GET /list
+```
+
+页面内输入一次密码后，会缓存在浏览器，并在后续请求中自动通过 `X-List-Password` 访问 `/api/shares`。
 
 ## 数据存储
 
