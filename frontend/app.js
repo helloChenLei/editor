@@ -10,8 +10,45 @@ const {
   ImageStore,
   ImageCompressor,
   ImageHostManager,
-  EditorMethods
+  EditorMethods,
+  RenderUtils
 } = wechatEditorModules;
+
+const createMarkdownRenderer = RenderUtils && typeof RenderUtils.createMarkdownRenderer === 'function'
+  ? RenderUtils.createMarkdownRenderer
+  : function() {
+    const escapeHtml = window.markdownit().utils.escapeHtml;
+    return window.markdownit({
+      html: true,
+      linkify: true,
+      typographer: false,
+      highlight: function (str, lang) {
+        if (lang && ['mermaid', 'flowchart', 'graph', 'sequenceDiagram', 'gantt', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'pie', 'gitGraph', 'requirementDiagram'].includes(lang)) {
+          const mermaidSource = escapeHtml(str);
+          return `<div class="mermaid" style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; overflow-x: auto;">${mermaidSource}</div>`;
+        }
+
+        const dots = '<div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div>';
+
+        let codeContent = '';
+        if (lang && typeof hljs !== 'undefined') {
+          try {
+            if (hljs.getLanguage(lang)) {
+              codeContent = hljs.highlight(str, { language: lang }).value;
+            } else {
+              codeContent = escapeHtml(str);
+            }
+          } catch (error) {
+            codeContent = escapeHtml(str);
+          }
+        } else {
+          codeContent = escapeHtml(str);
+        }
+
+        return `<div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">${dots}<div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">${codeContent}</code></div></div>`;
+      }
+    });
+  };
 
 const SafeImageStore = ImageStore || class {
   async init() { console.warn('ImageStore 未加载，使用降级实现'); }
@@ -47,7 +84,7 @@ const editorApp = createApp({
     return {
       markdownInput: '',
       renderedContent: '',
-      currentStyle: 'wechat-default',
+      currentStyle: 'wechat-anthropic',
       copySuccess: false,
       starredStyles: [],
       chatMemos: [],
@@ -106,8 +143,8 @@ const editorApp = createApp({
       await this.imageStore.init();
       console.log('图片存储系统已就绪');
     } catch (error) {
-      console.error('图片存储系统初始化失败:', error);
-      this.showToast('图片存储系统初始化失败', 'error');
+      // 某些浏览器隐私模式会禁用 IndexedDB；这里静默降级，避免用户一进站就收到错误提示。
+      console.warn('图片存储系统不可用，已降级为非持久化模式:', error);
     }
 
     // 初始化图片压缩器（最大宽度 1920px，质量 85%）
@@ -123,39 +160,7 @@ const editorApp = createApp({
     }
 
     // 初始化 markdown-it
-    const md = window.markdownit({
-      html: true,
-      linkify: true,
-      typographer: false,  // 禁用 typographer 以避免智能引号干扰加粗标记
-      highlight: function (str, lang) {
-        // Mermaid 图表特殊处理
-        if (lang && ['mermaid', 'flowchart', 'graph', 'sequenceDiagram', 'gantt', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'pie', 'gitGraph', 'requirementDiagram'].includes(lang)) {
-          const mermaidSource = md.utils.escapeHtml(str);
-          return `<div class="mermaid" style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; overflow-x: auto;">${mermaidSource}</div>`;
-        }
-
-        // macOS 风格的窗口装饰
-        const dots = '<div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div>';
-
-        // 检查 hljs 是否加载
-        let codeContent = '';
-        if (lang && typeof hljs !== 'undefined') {
-          try {
-            if (hljs.getLanguage(lang)) {
-              codeContent = hljs.highlight(str, { language: lang }).value;
-            } else {
-              codeContent = md.utils.escapeHtml(str);
-            }
-          } catch (__) {
-            codeContent = md.utils.escapeHtml(str);
-          }
-        } else {
-          codeContent = md.utils.escapeHtml(str);
-        }
-
-        return `<div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">${dots}<div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">${codeContent}</code></div></div>`;
-      }
-    });
+    const md = createMarkdownRenderer();
 
     if (typeof this.patchMarkdownScanner === 'function') {
       this.patchMarkdownScanner(md);
@@ -172,9 +177,22 @@ const editorApp = createApp({
 
   computed: {
     visibleStyles() {
-      return Object.fromEntries(
-        Object.entries(this.STYLES).filter(([, style]) => !style.hidden)
-      );
+      const entries = Object.entries(this.STYLES).filter(([, style]) => !style.hidden);
+      const order = {
+        'wechat-anthropic': 1,
+        'latepost-depth': 2,
+        'wechat-deepread': 3,
+        'wechat-claude-song': 4,
+      };
+      entries.sort(([keyA], [keyB]) => {
+        const a = order[keyA] ?? 100;
+        const b = order[keyB] ?? 100;
+        if (a !== b) return a - b;
+        const nameA = this.STYLES[keyA]?.name || '';
+        const nameB = this.STYLES[keyB]?.name || '';
+        return nameA.localeCompare(nameB, 'zh-CN');
+      });
+      return Object.fromEntries(entries);
     },
     visibleStarredStyles() {
       return this.starredStyles.filter((styleKey) => {

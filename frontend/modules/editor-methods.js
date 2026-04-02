@@ -4,6 +4,12 @@
 (() => {
   const wechatEditorModules = window.WechatEditorModules || {};
   const EMPHASIS_MARKERS = wechatEditorModules.EMPHASIS_MARKERS || new Set([0x2A, 0x5F, 0x7E]);
+  const RenderUtils = wechatEditorModules.RenderUtils || {};
+  const resolveStyleKey = typeof RenderUtils.resolveStyleKey === 'function'
+    ? RenderUtils.resolveStyleKey
+    : function(styleKey) {
+      return STYLES[styleKey] ? styleKey : 'wechat-default';
+    };
   const isCjkLetter = wechatEditorModules.isCjkLetter || function(charCode) {
     if (!charCode || charCode < 0) {
       return false;
@@ -44,7 +50,7 @@
     loadUserPreferences() {
       try {
         // 加载样式偏好
-        const savedStyle = localStorage.getItem('currentStyle');
+        const savedStyle = resolveStyleKey(localStorage.getItem('currentStyle'));
         if (savedStyle && STYLES[savedStyle]) {
           this.currentStyle = savedStyle;
         }
@@ -67,8 +73,10 @@
     // 保存用户偏好设置
     saveUserPreferences() {
       try {
+        const styleKey = resolveStyleKey(this.currentStyle);
+
         // 保存当前样式
-        localStorage.setItem('currentStyle', this.currentStyle);
+        localStorage.setItem('currentStyle', styleKey);
 
         // 保存当前内容
         localStorage.setItem('markdownInput', this.markdownInput);
@@ -79,77 +87,9 @@
 
     // 加载默认示例文章
     loadDefaultExample() {
-      this.markdownInput = `![](https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=1200&h=400&fit=crop)
-
-# 公众号 Markdown 编辑器
-
-欢迎使用这款专为**微信公众号**设计的 Markdown 编辑器！✨
-
-## 🎯 核心功能
-
-### 1. 智能图片处理
-
-![](https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=800&h=500&fit=crop)
-
-- **粘贴即用**：支持从任何地方复制粘贴图片（截图、浏览器、文件管理器）
-- **自动压缩**：图片自动压缩，平均压缩 50%-80%
-- **本地存储**：使用 IndexedDB 持久化，刷新不丢失
-- **编辑流畅**：编辑器中使用短链接，告别卡顿
-
-### 2. 多图排版展示
-
-支持朋友圈式的多图网格布局，2-3 列自动排版：
-
-![](https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&h=400&fit=crop)
-![](https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop)
-![](https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=400&fit=crop)
-
-### 3. 13 种精美样式
-
-1. **经典公众号系列**：默认、技术、优雅、深度阅读
-2. **传统媒体系列**：杂志、纽约时报、金融时报
-3. **现代数字系列**：Wired、Medium、Apple、Claude、AI Coder
-
-### 4. 一键复制
-
-点击「复制到公众号」按钮，直接粘贴到公众号后台，格式完美保留！
-
-## 💻 代码示例
-
-\`\`\`javascript
-// 图片自动压缩并存储到 IndexedDB
-const compressedBlob = await imageCompressor.compress(file);
-await imageStore.saveImage(imageId, compressedBlob);
-
-// 编辑器中插入短链接
-const markdown = \`![图片](img://\${imageId})\`;
-\`\`\`
-
-## 📖 引用样式
-
-> 这是一段引用文字，展示编辑器的引用样式效果。
->
-> 不同的样式主题会有不同的引用样式，试试切换样式看看效果！
-
-## 📊 表格支持
-
-| 功能 | 支持情况 | 说明 |
-|------|---------|------|
-| 图片粘贴 | ✅ | 100% 成功率 |
-| 刷新保留 | ✅ | IndexedDB 存储 |
-| 样式主题 | ✅ | 13 种精选样式 |
-| 代码高亮 | ✅ | 多语言支持 |
-
----
-
-**💡 提示**：
-
-- 试着切换不同的样式主题，体验各种风格的排版效果
-- 粘贴图片试试智能压缩功能
-- 刷新页面看看内容是否保留
-
-**🌟 开源项目**：如果觉得有用，欢迎访问 [GitHub 仓库](https://github.com/foolgry/editor) 给个 Star！`;
+      this.markdownInput = '';
     },
+
 
     handleFileUpload(event) {
       const file = event.target.files[0];
@@ -333,7 +273,9 @@ const markdown = \`![图片](img://\${imageId})\`;
     },
 
     applyInlineStyles(html) {
-      const style = STYLES[this.currentStyle].styles;
+      const styleKey = resolveStyleKey(this.currentStyle);
+      const styleConfig = STYLES[styleKey] || STYLES['wechat-default'];
+      const style = styleConfig.styles;
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const headingInlineOverrides = {
@@ -754,7 +696,8 @@ const markdown = \`![图片](img://\${imageId})\`;
         }
 
         // Section 容器包裹
-        const styleConfig = STYLES[this.currentStyle];
+        const styleKey = resolveStyleKey(this.currentStyle);
+        const styleConfig = STYLES[styleKey] || STYLES['wechat-default'];
         const containerBg = this.extractBackgroundColor(styleConfig.styles.container);
 
         if (containerBg && containerBg !== '#fff' && containerBg !== '#ffffff') {
@@ -977,7 +920,7 @@ const markdown = \`![图片](img://\${imageId})\`;
     isRecommended(styleKey) {
       // 推荐的样式
       const recommended = ['nikkei', 'wechat-anthropic', 'wechat-ft', 'wechat-nyt', 'latepost-depth', 'wechat-tech'];
-      return recommended.includes(styleKey);
+      return recommended.includes(resolveStyleKey(styleKey));
     },
 
     toggleStarStyle(styleKey) {
@@ -1001,8 +944,9 @@ const markdown = \`![图片](img://\${imageId})\`;
     },
 
     getStyleName(styleKey) {
-      const style = STYLES[styleKey];
-      return style ? style.name : styleKey;
+      const resolvedStyleKey = resolveStyleKey(styleKey);
+      const style = STYLES[resolvedStyleKey];
+      return style ? style.name.replace(/（隐藏）/g, '').trim() : styleKey;
     },
 
     showToast(message, type = 'success') {
@@ -1914,7 +1858,8 @@ const markdown = \`![图片](img://\${imageId})\`;
 
     // 获取背景色
     getBackgroundColor() {
-      const styleConfig = STYLES[this.currentStyle];
+      const styleKey = resolveStyleKey(this.currentStyle);
+      const styleConfig = STYLES[styleKey];
       if (styleConfig && styleConfig.styles && styleConfig.styles.container) {
         const bgColor = this.extractBackgroundColor(styleConfig.styles.container);
         return bgColor || '#FFFFFF';
@@ -1995,6 +1940,7 @@ const markdown = \`![图片](img://\${imageId})\`;
         return;
       }
 
+      const styleKey = resolveStyleKey(this.currentStyle);
       const title = this.extractTitle(content);
       const now = Date.now();
 
@@ -2008,7 +1954,7 @@ const markdown = \`![图片](img://\${imageId})\`;
           // 更新已存在的文章
           this.articleHistory[existingIndex].title = title;
           this.articleHistory[existingIndex].content = content;
-          this.articleHistory[existingIndex].style = this.currentStyle;
+          this.articleHistory[existingIndex].style = styleKey;
           this.articleHistory[existingIndex].updatedAt = now;
 
           // 移到最前面
@@ -2027,7 +1973,7 @@ const markdown = \`![图片](img://\${imageId})\`;
         id: newArticleId,
         title: title,
         content: content,
-        style: this.currentStyle,
+        style: styleKey,
         createdAt: now,
         updatedAt: now
       };
@@ -2058,8 +2004,9 @@ const markdown = \`![图片](img://\${imageId})\`;
 
       // 恢复内容和样式
       this.markdownInput = article.content;
-      if (article.style && STYLES[article.style]) {
-        this.currentStyle = article.style;
+      const styleKey = resolveStyleKey(article.style);
+      if (styleKey && STYLES[styleKey]) {
+        this.currentStyle = styleKey;
       }
 
       // 设置当前文章ID，后续编辑会更新这篇文章
@@ -2091,7 +2038,10 @@ const markdown = \`![图片](img://\${imageId})\`;
         if (saved) {
           const data = JSON.parse(saved);
           if (data && Array.isArray(data.articles)) {
-            this.articleHistory = data.articles;
+            this.articleHistory = data.articles.map((article) => ({
+              ...article,
+              style: resolveStyleKey(article.style)
+            }));
           }
         }
       } catch (error) {
@@ -2169,8 +2119,10 @@ const markdown = \`![图片](img://\${imageId})\`;
 
       this.sharing = true;
       this.shareError = null;
+      this.shareCopySuccess = false;
 
       try {
+        const styleKey = resolveStyleKey(this.currentStyle);
         const response = await fetch(`${this.shareServerUrl}/api/share`, {
           method: 'POST',
           headers: {
@@ -2178,11 +2130,18 @@ const markdown = \`![图片](img://\${imageId})\`;
           },
           body: JSON.stringify({
             content: this.markdownInput,
-            style: this.currentStyle
+            style: styleKey
           })
         });
 
-        const data = await response.json();
+        const contentType = response.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          const text = await response.text();
+          throw new Error(`服务返回异常：${response.status} ${text.slice(0, 120)}`);
+        }
 
         if (!response.ok) {
           throw new Error(data.error || '分享失败');
