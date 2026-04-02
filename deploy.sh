@@ -117,7 +117,7 @@ deploy_frontend() {
     # 设置权限
     ssh "$REMOTE_HOST" "
         chown -R www-data:www-data $REMOTE_DIR/frontend/ 2>/dev/null || chown -R root:root $REMOTE_DIR/frontend/
-        chmod -R 644 $REMOTE_DIR/frontend/*.html $REMOTE_DIR/frontend/*.js $REMOTE_DIR/frontend/*.css 2>/dev/null || true
+        find $REMOTE_DIR/frontend -type f \( -name '*.html' -o -name '*.js' -o -name '*.css' \) -exec chmod 644 {} + 2>/dev/null || true
     "
 
     print_success "前端部署完成"
@@ -171,25 +171,31 @@ deploy_backend() {
 
         # 兼容 docker compose / docker-compose
         if docker compose version >/dev/null 2>&1; then
-            DC='docker compose'
+            dc() { docker compose \"\$@\"; }
         elif command -v docker-compose >/dev/null 2>&1; then
-            DC='docker-compose'
+            dc() { docker-compose \"\$@\"; }
         else
             echo '错误: 未找到 docker compose 或 docker-compose'
             exit 1
         fi
 
-        # 停止旧容器
-        \$DC down 2>/dev/null || true
+        # 先构建，构建失败时保留当前在线容器，避免服务中断
+        if ! dc build backend >/tmp/md-editor-build.log 2>&1; then
+            echo 'Docker 构建失败，保留当前运行版本'
+            tail -20 /tmp/md-editor-build.log || true
+            exit 1
+        fi
+        tail -20 /tmp/md-editor-build.log || true
 
-        # 重新构建并启动（通过 env_file 加载 .env）
-        \$DC up -d --build 2>&1 | tail -20
+        # 构建成功后再启动/更新
+        dc up -d backend >/tmp/md-editor-up.log 2>&1
+        tail -20 /tmp/md-editor-up.log || true
 
         # 等待服务启动
         sleep 3
 
         # 检查状态
-        \$DC ps
+        dc ps
     "
 
     print_success "后端部署完成"
@@ -298,12 +304,14 @@ verify_deployment() {
     print_title "4. 验证部署"
 
     print_info "检查服务状态..."
+    local failures=0
 
     # 检查后端服务
     if ssh "$REMOTE_HOST" "curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/api/share/test" | grep -q "404"; then
         print_success "后端服务运行正常"
     else
         print_error "后端服务可能异常"
+        failures=$((failures + 1))
         ssh "$REMOTE_HOST" "
             cd $REMOTE_DIR
             if docker compose version >/dev/null 2>&1; then
@@ -321,6 +329,12 @@ verify_deployment() {
         print_success "前端访问正常 (${PUBLIC_URL})"
     else
         print_error "前端访问异常"
+        failures=$((failures + 1))
+    fi
+
+    if [ "$failures" -gt 0 ]; then
+        print_error "部署验证失败（$failures 项异常）"
+        exit 1
     fi
 
     print_success "部署验证完成"

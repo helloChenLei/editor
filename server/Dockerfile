@@ -9,6 +9,10 @@ RUN apk add --no-cache git gcc musl-dev
 # 复制依赖文件
 COPY go.mod go.sum ./
 
+# Go 依赖下载代理（优先国内镜像，失败时回退官方）
+ENV GOPROXY=https://goproxy.cn,https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.google.cn
+
 RUN go mod download
 
 # 复制源码
