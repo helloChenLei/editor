@@ -77,9 +77,7 @@ const editorApp = createApp({
       sharing: false,               // 是否正在分享
       shareUrl: null,               // 分享链接
       shareError: null,             // 分享错误信息
-      shareServerUrl: window.location.hostname === 'localhost' 
-        ? 'http://localhost:8080' 
-        : 'https://md.foolgry.top',  // 根据环境自动选择服务器地址
+      shareServerUrl: window.location.origin,  // 自动使用当前页面域名
       shareCopySuccess: false,      // 分享链接复制成功状态
       mermaidInitialized: false     // Mermaid 是否已初始化
     };

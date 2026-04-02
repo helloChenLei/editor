@@ -148,7 +148,7 @@ const markdown = \`![图片](img://\${imageId})\`;
 - 粘贴图片试试智能压缩功能
 - 刷新页面看看内容是否保留
 
-**🌟 开源项目**：如果觉得有用，欢迎访问 [GitHub 仓库](https://github.com/alchaincyf/huasheng_editor) 给个 Star！`;
+**🌟 开源项目**：如果觉得有用，欢迎访问 [GitHub 仓库](https://github.com/foolgry/editor) 给个 Star！`;
     },
 
     handleFileUpload(event) {
