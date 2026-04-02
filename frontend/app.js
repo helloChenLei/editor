@@ -50,6 +50,7 @@ const editorApp = createApp({
       currentStyle: 'wechat-default',
       copySuccess: false,
       starredStyles: [],
+      chatMemos: [],
       toast: {
         show: false,
         message: '',
