@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/joho/godotenv"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -37,7 +38,8 @@ var db *sql.DB
 
 var citeMarkerPattern = regexp.MustCompile(`\x{E200}cite\x{E202}[^\x{E201}]*\x{E201}`)
 
-const listPagePassword = "XOu6rt5uK9BIX"
+var listPagePassword string
+
 const listPasswordHeader = "X-List-Password"
 
 type ShareListItem struct {
@@ -49,6 +51,16 @@ type ShareListItem struct {
 }
 
 func main() {
+	// 加载 .env 文件（尝试多个路径：项目根目录、当前目录）
+	for _, p := range []string{"../.env", ".env"} {
+		godotenv.Load(p)
+	}
+
+	listPagePassword = os.Getenv("LIST_PAGE_PASSWORD")
+	if listPagePassword == "" {
+		log.Fatal("环境变量 LIST_PAGE_PASSWORD 未设置，请检查 .env 文件")
+	}
+
 	// 初始化数据库
 	if err := initDB(); err != nil {
 		log.Fatal("数据库初始化失败:", err)
@@ -68,7 +80,8 @@ func main() {
 	mux.HandleFunc("/list", handleListPage)
 
 	// 静态文件服务
-	staticDir := filepath.Join("..", ".")
+	staticDir := resolveStaticDir()
+	log.Printf("静态文件目录: %s", staticDir)
 	fileServer := http.FileServer(http.Dir(staticDir))
 	mux.Handle("/", fileServer)
 
@@ -125,14 +138,11 @@ func initDB() error {
 
 // CORS 中间件 - 处理跨域请求
 func corsMiddleware(next http.Handler) http.Handler {
+	// 从环境变量读取允许的来源
+	allowedOrigins := parseCORSOrigins()
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// 允许的来源（生产环境应配置为具体域名）
 		origin := r.Header.Get("Origin")
-		allowedOrigins := []string{
-			"https://admin.md.foolgry.top",
-			"http://localhost:8080",
-			"http://localhost:3000",
-		}
 
 		// 检查是否允许的域名
 		for _, allowed := range allowedOrigins {
@@ -1332,4 +1342,30 @@ func removeMarkdownLinks(line string) string {
 		break
 	}
 	return line
+}
+
+// parseCORSOrigins 从环境变量 CORS_ORIGINS 读取允许的来源列表
+func parseCORSOrigins() []string {
+	env := os.Getenv("CORS_ORIGINS")
+	if env == "" {
+		return []string{"http://localhost:8080", "http://localhost:3000"}
+	}
+	origins := strings.Split(env, ",")
+	for i, o := range origins {
+		origins[i] = strings.TrimSpace(o)
+	}
+	return origins
+}
+
+// resolveStaticDir 自动探测前端静态目录，兼容本地开发与容器运行
+func resolveStaticDir() string {
+	candidates := []string{"../frontend", "./frontend"}
+	for _, dir := range candidates {
+		indexFile := filepath.Join(dir, "index.html")
+		if info, err := os.Stat(indexFile); err == nil && !info.IsDir() {
+			return dir
+		}
+	}
+	// 回退到默认值，保持行为可预测
+	return "../frontend"
 }

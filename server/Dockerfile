@@ -9,10 +9,6 @@ RUN apk add --no-cache git gcc musl-dev
 # 复制依赖文件
 COPY go.mod go.sum ./
 
-# 配置国内 Go 代理
-ENV GOPROXY=https://goproxy.cn,direct
-ENV GOSUMDB=sum.golang.google.cn
-
 RUN go mod download
 
 # 复制源码
@@ -34,9 +30,10 @@ COPY --from=builder /app/server .
 
 # 创建数据目录
 RUN mkdir -p data
+RUN mkdir -p frontend
 
 # 暴露端口
 EXPOSE 8080
 
-# 运行
+# 运行（环境变量通过 docker compose env_file 或 -e 传入）
 CMD ["./server"]
