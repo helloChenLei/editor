@@ -72,7 +72,33 @@ Go 服务同时提供前端页面和后端 API，一个进程就够了。
 
 [![NPM](https://img.shields.io/badge/NPM-@foolgry/wxmd--cli-CB3837?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/@foolgry/wxmd-cli)
 
-### 安装（NPM）
+### 安装 Skill（推荐）
+
+让 AI Agent 帮你一键安装：
+```txt
+请帮我安装 github.com/foolgry/editor 中的 Skills
+```
+
+命令行安装
+```bash
+npx skills add foolgry/editor
+```
+
+或手动安装到 Claude Code：
+
+```bash
+# 克隆仓库
+git clone https://github.com/foolgry/editor.git /tmp/editor
+
+# 复制 Skill 到 Claude Code 技能目录
+cp -r /tmp/editor/skills/wechat-markdown-editor ~/.claude/skills/
+```
+
+### 安装 CLI 工具（可选）
+
+> **注意**：一般情况下无需手动安装 CLI 工具，使用 Skill 时会自动通过 npx 运行。
+> 
+> 如需全局安装：
 
 ```bash
 # 全局安装
