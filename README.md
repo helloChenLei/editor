@@ -18,7 +18,7 @@
 
 ### 纯前端功能（无需后端）
 
-- 13 种样式主题（公众号、杂志、纽约时报、金融时报、Apple 极简、Claude 等）
+- 18 种样式主题（公众号、杂志、纽约时报、金融时报、Apple 极简、Claude 等）
 - 实时预览 + 一键复制到公众号
 - 智能图片处理：粘贴/拖拽图片、自动压缩、IndexedDB 本地存储、复制时转 Base64
 - 多图网格布局（类似朋友圈）
@@ -64,6 +64,73 @@ Go 服务同时提供前端页面和后端 API，一个进程就够了。
 - IndexedDB（图片存储）+ Canvas API（图片压缩）+ Turndown（智能粘贴）
 - Go + SQLite（后端分享服务）
 - 纯 CSS，无需构建工具
+- Node.js CLI（Agent-First 命令行工具）
+
+## Agent CLI
+
+专为 AI Agent 设计的命令行工具，支持本地排版 Markdown 和调用分享 API。
+
+[![NPM](https://img.shields.io/badge/NPM-@foolgry/wxmd--cli-CB3837?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/@foolgry/wxmd-cli)
+
+### 安装（NPM）
+
+```bash
+# 全局安装
+npm install -g @foolgry/wxmd-cli
+
+# 或使用 pnpm
+pnpm add -g @foolgry/wxmd-cli
+```
+
+### 快速使用
+
+```bash
+# Markdown 排版（本地执行）
+wxmd-cli typeset --input article.md --style wechat-tech
+
+# 创建分享（需服务器运行）
+wxmd-cli share create --input article.md --style wechat-default
+
+# 获取分享内容
+wxmd-cli share get <share-id>
+
+# 列出可用样式（18种主题）
+wxmd-cli styles list
+
+# 环境检查
+wxmd-cli doctor
+```
+
+### 从源码安装（开发）
+
+```bash
+cd wxmd-cli
+pnpm install
+./src/index.js --help
+```
+
+### 环境变量
+
+- `WXMD_API_URL` - API 服务器地址（默认：`http://localhost:8080`）
+- `WXMD_API_TIMEOUT` - 请求超时（毫秒，默认：30000）
+
+### 输出格式
+
+默认 JSON 输出，面向 Agent 设计：
+
+```json
+{
+  "ok": true,
+  "data": { "html": "...", "file": "output.html" },
+  "meta": { "cliVersion": "1.0.0", "timestamp": "2026-04-06T10:30:00Z" }
+}
+```
+
+### 相关文档
+
+- **CLI 详细文档**: [wxmd-cli/README.md](wxmd-cli/README.md)
+- **Agent Skill 指南**: [skills/wechat-markdown-editor/INSTALL.md](skills/wechat-markdown-editor/INSTALL.md)
+- **Skill 使用手册**: [skills/wechat-markdown-editor/SKILL.md](skills/wechat-markdown-editor/SKILL.md)
 
 ## 开源协议
 
