@@ -76,7 +76,7 @@ Go 服务同时提供前端页面和后端 API，一个进程就够了。
 
 让 AI Agent 帮你一键安装：
 ```txt
-请帮我安装 github.com/foolgry/editor 中的 Skills
+请帮我安装 github.com/foolgry/editor 中的 Skills: npx skills add foolgry/editor
 ```
 
 命令行安装
