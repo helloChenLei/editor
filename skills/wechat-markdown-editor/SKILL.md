@@ -26,13 +26,16 @@ wxmd-cli typeset --input <file> --style <style> --output <format> [--out <file>]
 
 **示例：**
 ```bash
+# 推荐：使用 jq 解析并重定向写入文件（Agent 友好方式）
+wxmd-cli typeset --input article.md --style wechat-tech | jq -r '.data' > output.html
+
 # 从文件读取，输出 HTML 到 stdout
 wxmd-cli typeset --input article.md --style wechat-tech
 
 # 从 stdin 读取
 # echo "# Hello World" | wxmd-cli typeset --style wechat-default
 
-# 输出到文件
+# 使用 --out 参数输出到文件（旧方式，不推荐）
 wxmd-cli typeset --input article.md --style wechat-elegant --out output.html
 ```
 

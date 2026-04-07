@@ -121,45 +121,24 @@ const editorApp = createApp({
       this.initTurndownService();
     }
 
-    // 初始化 markdown-it
-    const md = window.markdownit({
-      html: true,
-      linkify: true,
-      typographer: false,  // 禁用 typographer 以避免智能引号干扰加粗标记
-      highlight: function (str, lang) {
-        // Mermaid 图表特殊处理
-        if (lang && ['mermaid', 'flowchart', 'graph', 'sequenceDiagram', 'gantt', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'pie', 'gitGraph', 'requirementDiagram'].includes(lang)) {
-          const mermaidSource = md.utils.escapeHtml(str);
-          return `<div class="mermaid" style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; overflow-x: auto;">${mermaidSource}</div>`;
-        }
-
-        // macOS 风格的窗口装饰
-        const dots = '<div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div>';
-
-        // 检查 hljs 是否加载
-        let codeContent = '';
-        if (lang && typeof hljs !== 'undefined') {
-          try {
-            if (hljs.getLanguage(lang)) {
-              codeContent = hljs.highlight(str, { language: lang }).value;
-            } else {
-              codeContent = md.utils.escapeHtml(str);
-            }
-          } catch (__) {
-            codeContent = md.utils.escapeHtml(str);
-          }
-        } else {
-          codeContent = md.utils.escapeHtml(str);
-        }
-
-        return `<div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">${dots}<div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">${codeContent}</code></div></div>`;
+    // 初始化 markdown-it（统一渲染内核）
+    const renderCore = window.WXMDRenderCore;
+    if (renderCore && typeof renderCore.createMarkdownParser === 'function') {
+      this.md = renderCore.createMarkdownParser({
+        markdownit: window.markdownit,
+        hljs: typeof hljs !== 'undefined' ? hljs : null
+      });
+    } else {
+      // 降级兼容：当共享渲染内核未加载时，仍可使用基础 markdown-it
+      this.md = window.markdownit({
+        html: true,
+        linkify: true,
+        typographer: false
+      });
+      if (typeof this.patchMarkdownScanner === 'function') {
+        this.patchMarkdownScanner(this.md);
       }
-    });
-
-    if (typeof this.patchMarkdownScanner === 'function') {
-      this.patchMarkdownScanner(md);
     }
-    this.md = md;
 
     // 手动触发一次渲染（确保初始内容显示）
     this.$nextTick(() => {

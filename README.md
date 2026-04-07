@@ -70,6 +70,8 @@ Go 服务同时提供前端页面和后端 API，一个进程就够了。
 
 专为 AI Agent 设计的命令行工具，支持本地排版 Markdown 和调用分享 API。
 
+> 渲染一致性说明：`CLI typeset`、首页编辑器预览、`/s/:id` 分享页已统一复用 `frontend/render-core.js`。
+
 [![NPM](https://img.shields.io/badge/NPM-@foolgry/wxmd--cli-CB3837?style=for-the-badge&logo=npm)](https://www.npmjs.com/package/@foolgry/wxmd-cli)
 
 ### 安装 Skill（推荐）

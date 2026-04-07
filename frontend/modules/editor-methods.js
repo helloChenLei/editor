@@ -200,6 +200,11 @@ const markdown = \`![图片](img://\${imageId})\`;
     },
 
     preprocessMarkdown(content) {
+      const renderCore = window.WXMDRenderCore;
+      if (renderCore && typeof renderCore.preprocessMarkdown === 'function') {
+        return renderCore.preprocessMarkdown(content);
+      }
+
       content = this.stripCitationMarkers(content);
 
       // 规范化水平分割线格式（修复从飞书等复制时的解析问题）
@@ -333,6 +338,14 @@ const markdown = \`![图片](img://\${imageId})\`;
     },
 
     applyInlineStyles(html) {
+      const renderCore = window.WXMDRenderCore;
+      if (renderCore && typeof renderCore.applyInlineStyles === 'function') {
+        return renderCore.applyInlineStyles(html, {
+          styles: STYLES,
+          styleKey: this.currentStyle
+        });
+      }
+
       const style = STYLES[this.currentStyle].styles;
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
@@ -1016,6 +1029,13 @@ const markdown = \`![图片](img://\${imageId})\`;
     },
 
     patchMarkdownScanner(md) {
+      const renderCore = window.WXMDRenderCore;
+      if (renderCore && typeof renderCore.patchMarkdownScanner === 'function') {
+        renderCore.patchMarkdownScanner(md);
+        this.scanDelimsPatched = true;
+        return;
+      }
+
       if (!md || !md.inline || !md.inline.State || this.scanDelimsPatched) {
         return;
       }

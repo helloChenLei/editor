@@ -692,6 +692,7 @@ func generateSharePageHTML(share Share) string {
     </main>
   </div>
 
+  <script src="/render-core.js"></script>
   <script src="/styles.js"></script>
   <script>
     const { createApp } = Vue;
@@ -716,37 +717,30 @@ func generateSharePageHTML(share Share) string {
       
       methods: {
         initMarkdown() {
+          const renderCore = window.WXMDRenderCore;
+          if (renderCore && typeof renderCore.createMarkdownParser === 'function') {
+            this.md = renderCore.createMarkdownParser({
+              markdownit: window.markdownit,
+              hljs: typeof hljs !== 'undefined' ? hljs : null
+            });
+            return;
+          }
+
           this.md = window.markdownit({
             html: true,
             linkify: true,
-            typographer: false,
-            highlight: function (str, lang) {
-              // Mermaid 图表特殊处理
-              if (lang && ['mermaid', 'flowchart', 'graph', 'sequenceDiagram', 'gantt', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'pie', 'gitGraph', 'requirementDiagram'].includes(lang)) {
-                return '<div class="mermaid" style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">' + str + '</div>';
-              }
-              
-              const dots = '<div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div>';
-              
-              let codeContent = '';
-              if (lang && typeof hljs !== 'undefined' && hljs.getLanguage(lang)) {
-                try {
-                  codeContent = hljs.highlight(str, { language: lang }).value;
-                } catch (__) {
-                  codeContent = str;
-                }
-              } else {
-                codeContent = str;
-              }
-              
-              return '<div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">' + dots + '<div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: &quot;SF Mono&quot;, Monaco, &quot;Cascadia Code&quot;, Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">' + codeContent + '</code></div></div>';
-            }
+            typographer: false
           });
         },
         
         async renderContent() {
           try {
-            let html = this.md.render(this.markdownContent);
+            const renderCore = window.WXMDRenderCore;
+            const processedContent = renderCore && typeof renderCore.preprocessMarkdown === 'function'
+              ? renderCore.preprocessMarkdown(this.markdownContent)
+              : this.markdownContent;
+
+            let html = this.md.render(processedContent);
             html = this.applyInlineStyles(html);
             this.renderedContent = html;
             this.loading = false;
@@ -796,6 +790,14 @@ func generateSharePageHTML(share Share) string {
         },
         
         applyInlineStyles(html) {
+          const renderCore = window.WXMDRenderCore;
+          if (renderCore && typeof renderCore.applyInlineStyles === 'function') {
+            return renderCore.applyInlineStyles(html, {
+              styles: STYLES,
+              styleKey: this.style
+            });
+          }
+
           const style = STYLES[this.style] ? STYLES[this.style].styles : STYLES['wechat-default'].styles;
           const parser = new DOMParser();
           const doc = parser.parseFromString(html, 'text/html');

@@ -4,6 +4,8 @@
 
 将 Markdown 转换为微信公众号可用的 HTML，支持 18 种精美样式主题。
 
+渲染内核与首页编辑器预览、分享页预览统一，减少本地与线上预览差异。
+
 [![npm version](https://badge.fury.io/js/@foolgry%2Fwxmd-cli.svg)](https://badge.fury.io/js/@foolgry%2Fwxmd-cli)
 
 ## 安装
@@ -22,11 +24,14 @@ yarn global add @foolgry/wxmd-cli
 ## 快速开始
 
 ```bash
-# 排版 Markdown 文件
+# 排版 Markdown 文件（输出 JSON）
 wxmd-cli typeset --input article.md --style wechat-tech
 
-# 输出 HTML 到文件
-wxmd-cli typeset --input article.md --style wechat-default --out article.html
+# 推荐：提取 HTML 并写入文件（Agent/脚本友好）
+wxmd-cli typeset --input article.md --style wechat-default | jq -r '.data' > article.html
+
+# 使用 --out 参数输出到文件
+wxmd-cli typeset --input article.md --style wechat-elegant --out article.html
 
 # 从 stdin 读取
 echo "# Hello World" | wxmd-cli typeset --style wechat-elegant
@@ -35,7 +40,7 @@ echo "# Hello World" | wxmd-cli typeset --style wechat-elegant
 wxmd-cli styles list
 
 # 检查环境
-doctor
+wxmd-cli doctor
 ```
 
 ## 命令
@@ -57,17 +62,23 @@ wxmd-cli typeset --input <file> --style <style> [options]
 **示例：**
 
 ```bash
-# 基础用法
+# 基础用法（输出 JSON）
 wxmd-cli typeset --input article.md
 
 # 指定样式
 wxmd-cli typeset --input article.md --style wechat-tech
 
-# 输出 HTML 到文件
+# 推荐：使用 jq 提取 HTML 并重定向到文件（Agent/CI 友好）
+wxmd-cli typeset --input article.md --style wechat-elegant | jq -r '.data' > article.html
+
+# 或使用 --out 参数输出到文件
 wxmd-cli typeset --input article.md --style wechat-elegant --out article.html
 
-# 管道输入
-  cat article.md | wxmd-cli typeset --style wechat-nyt --output html
+# 管道输入并提取 HTML
+cat article.md | wxmd-cli typeset --style wechat-nyt | jq -r '.data'
+
+# 查看完整 JSON 响应
+wxmd-cli typeset --input article.md --style wechat-tech | jq .
 ```
 
 ### `share create` - 创建分享
@@ -192,6 +203,31 @@ wxmd-cli typeset --input article.md --output html
 | 6 | 权限拒绝 |
 | 7 | 超时 |
 
+## 使用 jq 解析输出（推荐）
+
+CLI 默认输出 JSON，配合 `jq` 工具可以灵活提取所需内容：
+
+```bash
+# 提取 HTML 内容到文件（最常用）
+wxmd-cli typeset --input article.md --style wechat-tech | jq -r '.data' > output.html
+
+# 提取元数据
+wxmd-cli typeset --input article.md | jq -r '.meta'
+
+# 检查是否成功
+wxmd-cli typeset --input article.md | jq -r '.ok'
+
+# 保存完整响应用于调试
+wxmd-cli typeset --input article.md | jq . > result.json
+
+# 批量处理多个文件
+for file in *.md; do
+  wxmd-cli typeset --input "$file" | jq -r '.data' > "${file%.md}.html"
+done
+```
+
+**提示：** `jq -r` 表示 raw 输出，去除 JSON 字符串的引号，适合直接写入文件。
+
 ## 面向 Agent 设计
 
 本 CLI 专为 AI Agent 设计：
@@ -201,6 +237,18 @@ wxmd-cli typeset --input article.md --output html
 - **可恢复错误提示** - 每个错误都包含 `actionHint` 建议
 - **固定退出码** - 便于自动化脚本处理
 - **支持 stdin/stdout** - 适合管道操作
+
+## 渲染一致性回归测试
+
+用于防止首页编辑器、CLI、分享页三端渲染漂移：
+
+```bash
+# 运行一致性测试（含快照校验）
+pnpm --dir wxmd-cli test
+
+# 当你有意修改渲染行为时，更新快照
+UPDATE_SNAPSHOT=1 pnpm --dir wxmd-cli test
+```
 
 ## 相关链接
 

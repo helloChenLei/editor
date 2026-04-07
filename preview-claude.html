@@ -1,0 +1,134 @@
+<div style="max-width: 700px; margin: 0 auto; padding: 20px 24px 40px 24px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, &quot;Helvetica Neue&quot;, Arial, sans-serif; font-size: 17px; line-height: 1.75 !important; color: #2b2b2b !important; background-color: #faf9f7 !important; word-wrap: break-word; letter-spacing: -0.01em;"><h1 style="; font-size: 32px; font-weight: 600; color: #C15F3C !important; line-height: 1.2 !important; margin: 36px 0 18px; letter-spacing: -0.02em; background: linear-gradient(135deg, #C15F3C 0%, #e97d5b 50%, #CC8B7A 100%); -webkit-background-clip: text; background-clip: text;">公众号 Markdown 编辑器</h1>
+<div align="center">
+  <img src="frontend/logo.svg" width="120" height="120" alt="公众号 Markdown 编辑器" style="; max-width: 100%; max-height: 500px !important; height: auto; display: block; margin: 24px auto; border-radius: 10px; box-shadow: 0 6px 24px rgba(193, 95, 60, 0.1);">
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">一个专为微信公众号设计的 Markdown 编辑器</p>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;"><a href="https://md.foolgry.top/" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;"><img src="https://img.shields.io/badge/%E5%9C%A8%E7%BA%BF%E4%BD%93%E9%AA%8C-md.foolgry.top-0066FF?style=for-the-badge" alt="在线体验" style="; max-width: 100%; max-height: 500px !important; height: auto; display: block; margin: 24px auto; border-radius: 10px; box-shadow: 0 6px 24px rgba(193, 95, 60, 0.1);"></a>
+<a href="https://github.com/foolgry/editor" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;"><img src="https://img.shields.io/badge/GitHub-%E6%BA%90%E4%BB%A3%E7%A0%81-000?style=for-the-badge&amp;logo=github" alt="GitHub" style="; max-width: 100%; max-height: 500px !important; height: auto; display: block; margin: 24px auto; border-radius: 10px; box-shadow: 0 6px 24px rgba(193, 95, 60, 0.1);"></a></p>
+</div>
+<blockquote style="; margin: 18px 0; padding: 10px 16px; background: linear-gradient(135deg, rgba(193, 95, 60, 0.06) 0%, rgba(157, 200, 141, 0.06) 100%); border-left: 4px solid #C15F3C; color: #2b2b2b !important; font-size: 17px; line-height: 1.6 !important; font-style: italic; border-radius: 6px;">
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">本项目 Fork 自 <a href="https://github.com/alchaincyf/huasheng_editor" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;">alchaincyf/huasheng_editor</a>，在原项目基础上增加了以下功能：</p>
+<ul style="; margin: 20px 0; padding-left: 28px;">
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">修复多项 Bug（列表渲染、零宽字符、模块加载等）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">增加 Mermaid 图表渲染支持</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">增加分享功能（可将文章生成链接分享给他人查看）</li>
+</ul>
+</blockquote>
+<h2 style="; font-size: 26px; font-weight: 600; color: #C15F3C !important; line-height: 1.25 !important; margin: 32px 0 16px; letter-spacing: -0.015em; background: linear-gradient(135deg, #C15F3C 0%, #9DC88D 100%); -webkit-background-clip: text; background-clip: text;">功能</h2>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">纯前端功能（无需后端）</h3>
+<ul style="; margin: 20px 0; padding-left: 28px;">
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">18 种样式主题（公众号、杂志、纽约时报、金融时报、Apple 极简、Claude 等）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">实时预览 + 一键复制到公众号</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">智能图片处理：粘贴/拖拽图片、自动压缩、IndexedDB 本地存储、复制时转 Base64</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">多图网格布局（类似朋友圈）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">代码高亮（macOS 风格）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">Mermaid 图表渲染</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">智能粘贴（支持飞书、Notion、Word 等富文本）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">样式收藏、.md 文件上传</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">响应式设计（桌面/平板/手机）</li>
+</ul>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">分享功能（需要后端）</h3>
+<ul style="; margin: 20px 0; padding-left: 28px;">
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">将文章生成短链接，发送给他人查看</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">保留当前主题样式</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">分享管理列表（<code>/list</code>，需密码）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;"><strong style="; font-weight: 600; color: #C15F3C !important; background-color: rgba(193, 95, 60, 0.08) !important; padding: 2px 6px; border-radius: 3px;">注意</strong>：分享内容保存在服务器 SQLite 数据库中（<code>server/data/shares.db</code>）</li>
+</ul>
+<h2 style="; font-size: 26px; font-weight: 600; color: #C15F3C !important; line-height: 1.25 !important; margin: 32px 0 16px; letter-spacing: -0.015em; background: linear-gradient(135deg, #C15F3C 0%, #9DC88D 100%); -webkit-background-clip: text; background-clip: text;">快速开始</h2>
+<pre><code class="language-bash"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">git <span class="hljs-built_in">clone</span> https://github.com/foolgry/editor.git
+<span class="hljs-built_in">cd</span> editor
+
+<span class="hljs-built_in">cp</span> .env.example .<span class="hljs-built_in">env</span>     <span class="hljs-comment"># 编辑 .env 填写配置</span>
+./start.sh               <span class="hljs-comment"># 启动（需要本地安装 Go 1.21+）</span>
+
+<span class="hljs-comment"># 访问 http://localhost:8080</span>
+</code></div></div></code></pre>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">Go 服务同时提供前端页面和后端 API，一个进程就够了。</p>
+<h2 style="; font-size: 26px; font-weight: 600; color: #C15F3C !important; line-height: 1.25 !important; margin: 32px 0 16px; letter-spacing: -0.015em; background: linear-gradient(135deg, #C15F3C 0%, #9DC88D 100%); -webkit-background-clip: text; background-clip: text;">部署</h2>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">详见 <a href="docs/DEPLOY.md" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;">DEPLOY.md</a>。核心步骤：</p>
+<ol style="; margin: 20px 0; padding-left: 28px;">
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">复制 <code>.env.example</code> 为 <code>.env</code> 并填写配置</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;"><code>./deploy.sh</code> 一键部署</li>
+</ol>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">仓库内已包含 <code>docker-compose.yml</code>，<code>deploy.sh</code> 会同步并在服务器执行 <code>docker compose up -d --build</code>。</p>
+<h2 style="; font-size: 26px; font-weight: 600; color: #C15F3C !important; line-height: 1.25 !important; margin: 32px 0 16px; letter-spacing: -0.015em; background: linear-gradient(135deg, #C15F3C 0%, #9DC88D 100%); -webkit-background-clip: text; background-clip: text;">技术栈</h2>
+<ul style="; margin: 20px 0; padding-left: 28px;">
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">Vue 3 + Markdown-it + Highlight.js + Mermaid</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">IndexedDB（图片存储）+ Canvas API（图片压缩）+ Turndown（智能粘贴）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">Go + SQLite（后端分享服务）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">纯 CSS，无需构建工具</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;">Node.js CLI（Agent-First 命令行工具）</li>
+</ul>
+<h2 style="; font-size: 26px; font-weight: 600; color: #C15F3C !important; line-height: 1.25 !important; margin: 32px 0 16px; letter-spacing: -0.015em; background: linear-gradient(135deg, #C15F3C 0%, #9DC88D 100%); -webkit-background-clip: text; background-clip: text;">Agent CLI</h2>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">专为 AI Agent 设计的命令行工具，支持本地排版 Markdown 和调用分享 API。</p>
+<blockquote style="; margin: 18px 0; padding: 10px 16px; background: linear-gradient(135deg, rgba(193, 95, 60, 0.06) 0%, rgba(157, 200, 141, 0.06) 100%); border-left: 4px solid #C15F3C; color: #2b2b2b !important; font-size: 17px; line-height: 1.6 !important; font-style: italic; border-radius: 6px;">
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">渲染一致性说明：<code>CLI typeset</code>、首页编辑器预览、<code>/s/:id</code> 分享页已统一复用 <code>frontend/render-core.js</code>。</p>
+</blockquote>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;"><a href="https://www.npmjs.com/package/@foolgry/wxmd-cli" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;"><img src="https://img.shields.io/badge/NPM-@foolgry/wxmd--cli-CB3837?style=for-the-badge&amp;logo=npm" alt="NPM" style="; max-width: 100%; max-height: 500px !important; height: auto; display: block; margin: 24px auto; border-radius: 10px; box-shadow: 0 6px 24px rgba(193, 95, 60, 0.1);"></a></p>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">安装 Skill（推荐）</h3>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">让 AI Agent 帮你一键安装：</p>
+<pre><code class="language-txt"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">请帮我安装 https://github.com/foolgry/editor/blob/master/docs/INSTALL.md 指令快速安装
+</code></div></div></code></pre>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">命令行安装</p>
+<pre><code class="language-bash"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">npx skills add foolgry/editor -g --all
+</code></div></div></code></pre>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">或手动安装到 Claude Code：</p>
+<pre><code class="language-bash"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;"><span class="hljs-comment"># 克隆仓库</span>
+git <span class="hljs-built_in">clone</span> https://github.com/foolgry/editor.git /tmp/editor
+
+<span class="hljs-comment"># 复制 Skill 到 Claude Code 技能目录</span>
+<span class="hljs-built_in">cp</span> -r /tmp/editor/skills/wechat-markdown-editor ~/.claude/skills/
+</code></div></div></code></pre>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">安装 CLI 工具（可选）</h3>
+<blockquote style="; margin: 18px 0; padding: 10px 16px; background: linear-gradient(135deg, rgba(193, 95, 60, 0.06) 0%, rgba(157, 200, 141, 0.06) 100%); border-left: 4px solid #C15F3C; color: #2b2b2b !important; font-size: 17px; line-height: 1.6 !important; font-style: italic; border-radius: 6px;">
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;"><strong style="; font-weight: 600; color: #C15F3C !important; background-color: rgba(193, 95, 60, 0.08) !important; padding: 2px 6px; border-radius: 3px;">注意</strong>：一般情况下无需手动安装 CLI 工具，使用 Skill 时会自动通过 npx 运行。</p>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">如需全局安装：</p>
+</blockquote>
+<pre><code class="language-bash"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;"><span class="hljs-comment"># 全局安装</span>
+npm install -g @foolgry/wxmd-cli
+
+<span class="hljs-comment"># 或使用 pnpm</span>
+pnpm add -g @foolgry/wxmd-cli
+</code></div></div></code></pre>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">快速使用</h3>
+<pre><code class="language-bash"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;"><span class="hljs-comment"># Markdown 排版（本地执行）</span>
+wxmd-cli <span class="hljs-built_in">typeset</span> --input article.md --style wechat-tech
+
+<span class="hljs-comment"># 创建分享（需服务器运行）</span>
+wxmd-cli share create --input article.md --style wechat-default
+
+<span class="hljs-comment"># 获取分享内容</span>
+wxmd-cli share get &lt;share-id&gt;
+
+<span class="hljs-comment"># 列出可用样式（18种主题）</span>
+wxmd-cli styles list
+
+<span class="hljs-comment"># 环境检查</span>
+wxmd-cli doctor
+</code></div></div></code></pre>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">从源码安装（开发）</h3>
+<pre><code class="language-bash"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;"><span class="hljs-built_in">cd</span> wxmd-cli
+pnpm install
+./src/index.js --<span class="hljs-built_in">help</span>
+</code></div></div></code></pre>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">环境变量</h3>
+<ul style="; margin: 20px 0; padding-left: 28px;">
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;"><code>WXMD_API_URL</code> - API 服务器地址（默认：<code>http://localhost:8080</code>）</li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;"><code>WXMD_API_TIMEOUT</code> - 请求超时（毫秒，默认：30000）</li>
+</ul>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">输出格式</h3>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">默认 JSON 输出，面向 Agent 设计：</p>
+<pre><code class="language-json"><div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);"><div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div><div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;"><span class="hljs-punctuation">{</span>
+  <span class="hljs-attr">"ok"</span><span class="hljs-punctuation">:</span> <span class="hljs-literal"><span class="hljs-keyword">true</span></span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"data"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">"html"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"..."</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"file"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"output.html"</span> <span class="hljs-punctuation">}</span><span class="hljs-punctuation">,</span>
+  <span class="hljs-attr">"meta"</span><span class="hljs-punctuation">:</span> <span class="hljs-punctuation">{</span> <span class="hljs-attr">"cliVersion"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"1.0.0"</span><span class="hljs-punctuation">,</span> <span class="hljs-attr">"timestamp"</span><span class="hljs-punctuation">:</span> <span class="hljs-string">"2026-04-06T10:30:00Z"</span> <span class="hljs-punctuation">}</span>
+<span class="hljs-punctuation">}</span>
+</code></div></div></code></pre>
+<h3 style="; font-size: 22px; font-weight: 600; color: #2b2b2b !important; line-height: 1.3 !important; margin: 28px 0 14px; letter-spacing: -0.01em;">相关文档</h3>
+<ul style="; margin: 20px 0; padding-left: 28px;">
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;"><strong style="; font-weight: 600; color: #C15F3C !important; background-color: rgba(193, 95, 60, 0.08) !important; padding: 2px 6px; border-radius: 3px;">CLI 详细文档</strong>: <a href="wxmd-cli/README.md" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;">wxmd-cli/README.md</a></li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;"><strong style="; font-weight: 600; color: #C15F3C !important; background-color: rgba(193, 95, 60, 0.08) !important; padding: 2px 6px; border-radius: 3px;">Agent Skill 指南</strong>: <a href="skills/wechat-markdown-editor/INSTALL.md" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;">skills/wechat-markdown-editor/INSTALL.md</a></li>
+<li style="; margin: 10px 0; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px;"><strong style="; font-weight: 600; color: #C15F3C !important; background-color: rgba(193, 95, 60, 0.08) !important; padding: 2px 6px; border-radius: 3px;">Skill 使用手册</strong>: <a href="skills/wechat-markdown-editor/SKILL.md" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;">skills/wechat-markdown-editor/SKILL.md</a></li>
+</ul>
+<h2 style="; font-size: 26px; font-weight: 600; color: #C15F3C !important; line-height: 1.25 !important; margin: 32px 0 16px; letter-spacing: -0.015em; background: linear-gradient(135deg, #C15F3C 0%, #9DC88D 100%); -webkit-background-clip: text; background-clip: text;">开源协议</h2>
+<p style="; margin: 20px 0 !important; line-height: 1.8 !important; color: #2b2b2b !important; font-size: 17px; letter-spacing: -0.005em;">基于 <a href="LICENSE" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;">MIT License</a> 开源，原始项目作者：<a href="https://github.com/alchaincyf" style="; color: #C15F3C !important; text-decoration: none; border-bottom: 1px solid rgba(193, 95, 60, 0.4); font-weight: 500;">花生</a>。</p>
+</div>
