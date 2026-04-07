@@ -78,7 +78,7 @@ Go 服务同时提供前端页面和后端 API，一个进程就够了。
 
 让 AI Agent 帮你一键安装：
 ```txt
-请帮我安装 https://github.com/foolgry/editor/blob/master/docs/INSTALL.md 指令快速安装
+请按照 https://github.com/foolgry/editor/blob/master/docs/INSTALL.md 文档帮我安装skills
 ```
 
 命令行安装
