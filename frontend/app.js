@@ -209,9 +209,24 @@ const editorApp = createApp({
       try {
         const module = await import('https://cdn.jsdelivr.net/npm/@huacnlee/autocorrect@latest/autocorrect.js');
         this.autocorrect = module.default || module;
-        console.log('AutoCorrect 模块已加载');
+        console.log('AutoCorrect 模块已加载', this.autocorrect);
       } catch (err) {
         console.warn('AutoCorrect 加载失败:', err);
+        // 延迟重试一次
+        setTimeout(() => this.retryLoadAutocorrect(), 1000);
+      }
+    },
+
+    /**
+     * 重试加载 AutoCorrect
+     */
+    async retryLoadAutocorrect() {
+      try {
+        const module = await import('https://cdn.jsdelivr.net/npm/@huacnlee/autocorrect@latest/autocorrect.js');
+        this.autocorrect = module.default || module;
+        console.log('AutoCorrect 模块重试加载成功');
+      } catch (err) {
+        console.error('AutoCorrect 重试加载失败:', err);
       }
     },
 
