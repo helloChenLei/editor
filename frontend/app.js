@@ -197,6 +197,48 @@ const editorApp = createApp({
       const logger = type === 'error' ? console.error : console.log;
       logger(message);
     },
+
+    /**
+     * 自动修复文本中的 CJK 空格和标点问题
+     */
+    fixTextSpaces() {
+      if (!this.markdownInput) {
+        this.showToast('没有可修复的内容', 'error');
+        return;
+      }
+
+      // 检查 autocorrect 是否可用
+      if (typeof autocorrect === 'undefined' || !autocorrect.format) {
+        this.showToast('AutoCorrect 未加载', 'error');
+        console.error('autocorrect global object not found');
+        return;
+      }
+
+      try {
+        // 记录原始长度
+        const originalLength = this.markdownInput.length;
+
+        // 调用 autocorrect 修复
+        const fixed = autocorrect.format(this.markdownInput, 'markdown');
+
+        // 更新内容
+        this.markdownInput = fixed;
+
+        // 显示结果
+        const changeCount = Math.abs(fixed.length - originalLength);
+        if (changeCount > 0) {
+          this.showToast(`已修复 ${changeCount} 处格式问题`, 'success');
+        } else {
+          this.showToast('没有发现需要修复的问题', 'success');
+        }
+
+        console.log(`AutoCorrect: ${originalLength} -> ${fixed.length} chars (${changeCount} changes)`);
+      } catch (err) {
+        console.error('AutoCorrect error:', err);
+        this.showToast('修复失败: ' + err.message, 'error');
+      }
+    },
+
     ...SafeEditorMethods
   }
 });
