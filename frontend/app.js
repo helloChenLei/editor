@@ -79,8 +79,7 @@ const editorApp = createApp({
       shareError: null,             // 分享错误信息
       shareServerUrl: window.location.origin,  // 自动使用当前页面域名
       shareCopySuccess: false,      // 分享链接复制成功状态
-      mermaidInitialized: false,    // Mermaid 是否已初始化
-      autocorrect: null               // AutoCorrect 模块（动态加载）
+      mermaidInitialized: false    // Mermaid 是否已初始化
     };
   },
 
@@ -147,9 +146,6 @@ const editorApp = createApp({
         this.renderMarkdown();
       }
     });
-
-    // 动态加载 AutoCorrect 模块
-    this.loadAutocorrect();
   },
 
   watch: {
@@ -203,35 +199,6 @@ const editorApp = createApp({
     },
 
     /**
-     * 动态加载 AutoCorrect 模块
-     */
-    async loadAutocorrect() {
-      try {
-        // 使用 esm.sh CDN，它会正确处理 WASM 的 MIME 类型
-        const module = await import('https://esm.sh/@huacnlee/autocorrect@latest');
-        this.autocorrect = module;
-        console.log('AutoCorrect 模块已加载', this.autocorrect);
-      } catch (err) {
-        console.warn('AutoCorrect 加载失败:', err);
-        // 延迟重试一次
-        setTimeout(() => this.retryLoadAutocorrect(), 1000);
-      }
-    },
-
-    /**
-     * 重试加载 AutoCorrect
-     */
-    async retryLoadAutocorrect() {
-      try {
-        const module = await import('https://esm.sh/@huacnlee/autocorrect@latest');
-        this.autocorrect = module;
-        console.log('AutoCorrect 模块重试加载成功');
-      } catch (err) {
-        console.error('AutoCorrect 重试加载失败:', err);
-      }
-    },
-
-    /**
      * 自动修复文本中的 CJK 空格和标点问题
      */
     fixTextSpaces() {
@@ -240,10 +207,10 @@ const editorApp = createApp({
         return;
       }
 
-      // 检查 autocorrect 是否可用
-      if (!this.autocorrect || !this.autocorrect.format) {
+      // 检查 autocorrect 是否可用（全局对象）
+      if (typeof autocorrect === 'undefined' || !autocorrect.format) {
         this.showToast('AutoCorrect 未加载', 'error');
-        console.error('autocorrect module not loaded');
+        console.error('autocorrect global object not found');
         return;
       }
 
@@ -251,8 +218,8 @@ const editorApp = createApp({
         // 记录原始长度
         const originalLength = this.markdownInput.length;
 
-        // 调用 autocorrect 修复（使用正确的 API 格式）
-        const fixed = this.autocorrect.format(this.markdownInput, { filetype: 'markdown' });
+        // 调用 autocorrect 修复（全局对象）
+        const fixed = autocorrect.format(this.markdownInput);
 
         // 更新内容
         this.markdownInput = fixed;
