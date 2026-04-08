@@ -13,12 +13,14 @@
 > - 修复多项 Bug（列表渲染、零宽字符、模块加载等）
 > - 增加 Mermaid 图表渲染支持
 > - 增加分享功能（可将文章生成链接分享给他人查看）
+> - 增加 Agent / CLI 工作流支持
+> - 统一首页、CLI、分享页渲染内核
 
 ## 功能
 
 ### 纯前端功能（无需后端）
 
-- 13 种样式主题（公众号、杂志、纽约时报、金融时报、Apple 极简、Claude 等）
+- 19 种样式主题（公众号、杂志、纽约时报、金融时报、Apple 极简、Claude 等）
 - 实时预览 + 一键复制到公众号
 - 智能图片处理：粘贴/拖拽图片、自动压缩、IndexedDB 本地存储、复制时转 Base64
 - 多图网格布局（类似朋友圈）
@@ -64,6 +66,50 @@ Go 服务同时提供前端页面和后端 API，一个进程就够了。
 - IndexedDB（图片存储）+ Canvas API（图片压缩）+ Turndown（智能粘贴）
 - Go + SQLite（后端分享服务）
 - 纯 CSS，无需构建工具
+- Node.js CLI（Agent-First 命令行工具）
+
+## Agent CLI
+
+仓库内置 `wxmd-cli`，支持本地排版 Markdown、自动修复中英文空格与标点、调用分享 API。
+
+> 渲染一致性说明：CLI `typeset`、首页编辑器预览、`/s/:id` 分享页统一复用 [frontend/render-core.js](frontend/render-core.js)。
+
+### 安装 Skill（推荐）
+
+Agent 可参考 [docs/INSTALL.md](docs/INSTALL.md) 安装 Skill，或直接使用仓库内的 [skills/wechat-markdown-editor/SKILL.md](skills/wechat-markdown-editor/SKILL.md)。
+
+### 从源码使用 CLI
+
+```bash
+cd wxmd-cli
+npm install
+
+# 查看帮助
+node src/index.js --help
+
+# Markdown 排版
+node src/index.js typeset --input article.md --style wechat-anthropic
+
+# 自动修复空格和标点
+echo "hello世界" | node src/index.js format --output text
+
+# 创建分享
+WXMD_API_URL=http://localhost:8080 node src/index.js share create --input article.md --style wechat-anthropic
+```
+
+### CLI 命令
+
+- `typeset`：将 Markdown 渲染为带内联样式的 HTML
+- `format`：自动修复 CJK 空格和标点问题
+- `share create/get`：创建和读取分享内容
+- `styles list`：列出当前仓库中的所有样式
+- `doctor`：检查 Node 版本、依赖与 API 连通性
+
+### 相关文档
+
+- [wxmd-cli/README.md](wxmd-cli/README.md)
+- [docs/INSTALL.md](docs/INSTALL.md)
+- [skills/wechat-markdown-editor/SKILL.md](skills/wechat-markdown-editor/SKILL.md)
 
 ## 开源协议
 

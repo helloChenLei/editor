@@ -6,13 +6,12 @@
   const wechatEditorModules = window.WechatEditorModules || {};
   const RenderUtils = wechatEditorModules.RenderUtils || {};
   const EditorMethods = wechatEditorModules.EditorMethods || {};
-  const styleRegistry = wechatEditorModules.STYLES || (typeof STYLES !== 'undefined' ? STYLES : {});
   const sharedPayload = window.__WX_EDITOR_SHARE__ || {};
   const createMarkdownRenderer = RenderUtils.createMarkdownRenderer || function() {
     throw new Error('RenderUtils 未加载');
   };
   const resolveStyleKey = RenderUtils.resolveStyleKey || function(styleKey) {
-    return styleRegistry[styleKey] ? styleKey : 'wechat-default';
+    return styleKey || 'wechat-default';
   };
 
   createApp({
@@ -23,7 +22,6 @@
         markdownInput: typeof sharedPayload.content === 'string' ? sharedPayload.content : '',
         renderedContent: '',
         currentStyle: resolveStyleKey(sharedPayload.style),
-        copySuccess: false,
         md: null,
         imageStore: null,
         imageIdToObjectURL: {},
@@ -31,14 +29,6 @@
         articleHistory: [],
         currentArticleId: null
       };
-    },
-
-    computed: {
-      styleName() {
-        const styleKey = resolveStyleKey(this.currentStyle);
-        const styleConfig = styleRegistry[styleKey];
-        return styleConfig ? styleConfig.name.replace(/（隐藏）/g, '').trim() : styleKey;
-      }
     },
 
     async mounted() {

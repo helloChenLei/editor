@@ -5,7 +5,7 @@
   const wechatEditorModules = window.WechatEditorModules || {};
   const globalStyles = typeof STYLES !== 'undefined' ? STYLES : {};
   const styleRegistry = wechatEditorModules.STYLES || globalStyles;
-  const MERMAID_LANGUAGES = new Set([
+  const FALLBACK_MERMAID_LANGUAGES = [
     'mermaid',
     'flowchart',
     'graph',
@@ -18,7 +18,21 @@
     'pie',
     'gitGraph',
     'requirementDiagram'
-  ]);
+  ];
+
+  function getRenderCore() {
+    return window.WXMDRenderCore && typeof window.WXMDRenderCore === 'object'
+      ? window.WXMDRenderCore
+      : null;
+  }
+
+  function getMermaidLanguages() {
+    const renderCore = getRenderCore();
+    if (renderCore && Array.isArray(renderCore.MERMAID_LANGUAGES)) {
+      return new Set(renderCore.MERMAID_LANGUAGES);
+    }
+    return new Set(FALLBACK_MERMAID_LANGUAGES);
+  }
 
   function normalizeStyleAlias(rawValue) {
     return String(rawValue || '')
@@ -73,15 +87,24 @@
     return styleRegistry['wechat-default'] ? 'wechat-default' : Object.keys(styleRegistry)[0];
   }
 
-  function createMarkdownRenderer() {
+  function createMarkdownRenderer(options = {}) {
+    const renderCore = getRenderCore();
+    if (renderCore && typeof renderCore.createMarkdownParser === 'function') {
+      return renderCore.createMarkdownParser({
+        markdownit: options.markdownit || window.markdownit,
+        hljs: options.hljs || (typeof hljs !== 'undefined' ? hljs : null)
+      });
+    }
+
     const escapeHtml = window.markdownit().utils.escapeHtml;
+    const mermaidLanguages = getMermaidLanguages();
 
     return window.markdownit({
       html: true,
       linkify: true,
       typographer: false,
       highlight: function(str, lang) {
-        if (lang && MERMAID_LANGUAGES.has(lang)) {
+        if (lang && mermaidLanguages.has(lang)) {
           const escapedSource = escapeHtml(str);
           return `<div class="mermaid" style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; overflow-x: auto;">${escapedSource}</div>`;
         }
@@ -108,10 +131,67 @@
     });
   }
 
+  function patchMarkdownScanner(md) {
+    const renderCore = getRenderCore();
+    if (renderCore && typeof renderCore.patchMarkdownScanner === 'function') {
+      renderCore.patchMarkdownScanner(md);
+    }
+  }
+
+  function preprocessMarkdown(content) {
+    const renderCore = getRenderCore();
+    if (renderCore && typeof renderCore.preprocessMarkdown === 'function') {
+      return renderCore.preprocessMarkdown(content);
+    }
+    return String(content || '');
+  }
+
+  function stripCitationMarkers(content) {
+    const renderCore = getRenderCore();
+    if (renderCore && typeof renderCore.stripCitationMarkers === 'function') {
+      return renderCore.stripCitationMarkers(content);
+    }
+    return String(content || '');
+  }
+
+  function applyInlineStyles(html, options = {}) {
+    const renderCore = getRenderCore();
+    if (renderCore && typeof renderCore.applyInlineStyles === 'function') {
+      return renderCore.applyInlineStyles(html, {
+        styles: options.styles || styleRegistry,
+        styleKey: resolveStyleKey(options.styleKey),
+        parseHtml: options.parseHtml
+      });
+    }
+    return html;
+  }
+
+  function renderMarkdown(markdown, options = {}) {
+    const renderCore = getRenderCore();
+    if (renderCore && typeof renderCore.renderMarkdown === 'function') {
+      return renderCore.renderMarkdown(markdown, {
+        styles: options.styles || styleRegistry,
+        styleKey: resolveStyleKey(options.styleKey),
+        markdownit: options.markdownit || window.markdownit,
+        hljs: options.hljs || (typeof hljs !== 'undefined' ? hljs : null),
+        parseHtml: options.parseHtml
+      });
+    }
+
+    const md = options.md || createMarkdownRenderer(options);
+    return applyInlineStyles(md.render(preprocessMarkdown(markdown)), options);
+  }
+
   window.WechatEditorModules = window.WechatEditorModules || {};
   window.WechatEditorModules.RenderUtils = {
-    MERMAID_LANGUAGES,
+    MERMAID_LANGUAGES: getMermaidLanguages(),
     createMarkdownRenderer,
-    resolveStyleKey
+    patchMarkdownScanner,
+    preprocessMarkdown,
+    stripCitationMarkers,
+    applyInlineStyles,
+    renderMarkdown,
+    resolveStyleKey,
+    normalizeStyleAlias
   };
 })();

@@ -476,6 +476,8 @@ const sharedFaviconHeadHTML = `
   <link rel="shortcut icon" href="/favicon.jpg">
   <link rel="apple-touch-icon" href="/favicon.jpg">`
 
+const siteTitle = "内容排版及分享工具"
+
 // generateSharePageHTML 生成分享页面 HTML
 func generateSharePageHTML(share Share, baseURL string, pageURL string) string {
 	cleanContent := stripCitationMarkers(share.Content)
@@ -492,6 +494,11 @@ func generateSharePageHTML(share Share, baseURL string, pageURL string) string {
 		description = "通过公众号排版器分享的文章"
 	}
 
+	pageTitle := siteTitle
+	if strings.TrimSpace(title) != "" {
+		pageTitle = title + " - " + siteTitle
+	}
+
 	sharePreviewImage := assetURL(baseURL, "/favicon.jpg")
 
 	const pageTemplate = `<!DOCTYPE html>
@@ -499,9 +506,10 @@ func generateSharePageHTML(share Share, baseURL string, pageURL string) string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>__WX_EDITOR_TITLE__</title>
+  <title>__WX_EDITOR_PAGE_TITLE__</title>
   <meta name="description" content="__WX_EDITOR_DESCRIPTION__">
   <meta property="og:type" content="article">
+  <meta property="og:site_name" content="__WX_EDITOR_SITE_TITLE__">
   <meta property="og:title" content="__WX_EDITOR_TITLE__">
   <meta property="og:description" content="__WX_EDITOR_DESCRIPTION__">
   <meta property="og:image" content="__WX_EDITOR_OG_IMAGE__">
@@ -553,15 +561,10 @@ __WX_EDITOR_FAVICONS__
     .header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
+      justify-content: center;
       padding: 16px 24px;
       border-bottom: 1px solid var(--color-border);
       background: var(--color-surface);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      flex-wrap: wrap;
     }
 
     .logo {
@@ -572,11 +575,6 @@ __WX_EDITOR_FAVICONS__
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      text-decoration: none;
-    }
-
-    .logo:hover {
-      opacity: 0.82;
     }
 
     .logo img {
@@ -584,59 +582,6 @@ __WX_EDITOR_FAVICONS__
       height: 20px;
       border-radius: 6px;
       object-fit: cover;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .style-badge {
-      padding: 6px 12px;
-      background: var(--color-bg);
-      border: 1px solid var(--color-border);
-      border-radius: 999px;
-      font-size: 13px;
-      color: var(--color-secondary);
-      white-space: nowrap;
-    }
-
-    .btn {
-      padding: 8px 16px;
-      background: var(--color-accent);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 500;
-      cursor: pointer;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      transition: opacity 0.2s ease;
-    }
-
-    .btn:hover {
-      opacity: 0.92;
-    }
-
-    .btn:disabled {
-      opacity: 0.55;
-      cursor: not-allowed;
-    }
-
-    .btn-secondary {
-      background: var(--color-surface);
-      color: var(--color-primary);
-      border: 1px solid var(--color-border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--color-bg);
     }
 
     .content {
@@ -693,14 +638,9 @@ __WX_EDITOR_FAVICONS__
 <body>
   <div id="app" v-cloak>
     <header class="header">
-      <a href="/" class="logo">
-        <img src="/favicon.jpg" alt="内容分享工具">
-        <span>内容分享工具</span>
-      </a>
-      <div v-if="!loading && !error" class="header-actions">
-        <span class="style-badge">{{ styleName }}</span>
-        <button class="btn btn-secondary" @click="copyToClipboard">{{ copySuccess ? '✓ 已复制' : '复制到公众号' }}</button>
-        <a href="/" class="btn">打开编辑器</a>
+      <div class="logo">
+        <img src="/favicon.jpg" alt="__WX_EDITOR_SITE_TITLE__">
+        <span>__WX_EDITOR_SITE_TITLE__</span>
       </div>
     </header>
 
@@ -730,13 +670,16 @@ __WX_EDITOR_FAVICONS__
   </script>
   <script src="/styles.js?v=11"></script>
   <script src="/modules/text-utils.js?v=6"></script>
-  <script src="/modules/render-utils.js?v=1"></script>
-  <script src="/modules/editor-methods.js?v=9"></script>
+  <script src="/render-core.js?v=1"></script>
+  <script src="/modules/render-utils.js?v=2"></script>
+  <script src="/modules/editor-methods.js?v=11"></script>
   <script src="/share-page.js?v=1"></script>
 </body>
 </html>`
 
 	replacer := strings.NewReplacer(
+		"__WX_EDITOR_PAGE_TITLE__", html.EscapeString(pageTitle),
+		"__WX_EDITOR_SITE_TITLE__", html.EscapeString(siteTitle),
 		"__WX_EDITOR_TITLE__", html.EscapeString(title),
 		"__WX_EDITOR_DESCRIPTION__", html.EscapeString(description),
 		"__WX_EDITOR_OG_IMAGE__", html.EscapeString(sharePreviewImage),
@@ -755,7 +698,7 @@ func generateListPageHTML() string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>分享列表</title>
+  <title>` + siteTitle + ` - 分享列表</title>
 ` + sharedFaviconHeadHTML + `
   <style>
     * { box-sizing: border-box; }

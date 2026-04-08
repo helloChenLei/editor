@@ -140,6 +140,10 @@
     },
 
     preprocessMarkdown(content) {
+      if (typeof RenderUtils.preprocessMarkdown === 'function') {
+        return RenderUtils.preprocessMarkdown(content);
+      }
+
       content = this.stripCitationMarkers(content);
 
       // 规范化水平分割线格式（修复从飞书等复制时的解析问题）
@@ -273,6 +277,13 @@
     },
 
     applyInlineStyles(html) {
+      if (typeof RenderUtils.applyInlineStyles === 'function' && window.WXMDRenderCore) {
+        return RenderUtils.applyInlineStyles(html, {
+          styleKey: this.currentStyle,
+          styles: STYLES
+        });
+      }
+
       const styleKey = resolveStyleKey(this.currentStyle);
       const styleConfig = STYLES[styleKey] || STYLES['wechat-default'];
       const style = styleConfig.styles;
@@ -853,12 +864,7 @@
 
           if (blob) {
             // 将 Blob 转为 Base64
-            return new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onloadend = () => resolve(reader.result);
-              reader.onerror = (error) => reject(new Error('FileReader failed: ' + error));
-              reader.readAsDataURL(blob);
-            });
+            return await this.blobToDataURL(blob);
           } else {
             console.warn(`图片 Blob 不存在: ${imageId}`);
             // 继续尝试用 fetch 方式（兜底）
@@ -881,17 +887,56 @@
         }
 
         const blob = await response.blob();
-
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result);
-          reader.onerror = (error) => reject(new Error('FileReader failed: ' + error));
-          reader.readAsDataURL(blob);
-        });
+        return await this.blobToDataURL(blob);
       } catch (error) {
         // CORS或网络错误时，抛出错误让外层处理
         throw new Error(`图片加载失败 (${src}): ${error.message}`);
       }
+    },
+
+    blobToDataURL(blob) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.onerror = (error) => reject(new Error('FileReader failed: ' + error));
+        reader.readAsDataURL(blob);
+      });
+    },
+
+    async inlineLocalImagesForSharing(content) {
+      if (!content || !content.includes('img://')) {
+        return content;
+      }
+
+      if (!this.imageStore) {
+        throw new Error('本地图片存储未初始化，无法分享图片');
+      }
+
+      const matches = Array.from(new Set(content.match(/img:\/\/[A-Za-z0-9_-]+/g) || []));
+      if (!matches.length) {
+        return content;
+      }
+
+      this.showToast(`正在处理 ${matches.length} 张本地图片...`, 'success');
+
+      const replacements = new Map();
+      for (const imageUrl of matches) {
+        const imageId = imageUrl.replace('img://', '');
+        const blob = await this.imageStore.getImageBlob(imageId);
+
+        if (!blob) {
+          throw new Error(`本地图片不存在或已失效：${imageId}`);
+        }
+
+        replacements.set(imageUrl, await this.blobToDataURL(blob));
+      }
+
+      let nextContent = content;
+      replacements.forEach((dataUrl, imageUrl) => {
+        nextContent = nextContent.split(imageUrl).join(dataUrl);
+      });
+
+      return nextContent;
     },
 
     extractBackgroundColor(styleString) {
@@ -960,6 +1005,12 @@
     },
 
     patchMarkdownScanner(md) {
+      if (typeof RenderUtils.patchMarkdownScanner === 'function' && window.WXMDRenderCore) {
+        RenderUtils.patchMarkdownScanner(md);
+        this.scanDelimsPatched = true;
+        return;
+      }
+
       if (!md || !md.inline || !md.inline.State || this.scanDelimsPatched) {
         return;
       }
@@ -2123,13 +2174,14 @@
 
       try {
         const styleKey = resolveStyleKey(this.currentStyle);
+        const contentToShare = await this.inlineLocalImagesForSharing(this.markdownInput);
         const response = await fetch(`${this.shareServerUrl}/api/share`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            content: this.markdownInput,
+            content: contentToShare,
             style: styleKey
           })
         });
