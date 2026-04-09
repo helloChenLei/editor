@@ -6,7 +6,7 @@
 const fs = require('fs');
 const { createShare, getShare, setGlobalConfig } = require('../lib/api');
 const { success, error, formatOutput, getExitCode } = require('../lib/output');
-const { hasStyle, getDefaultStyle, resolveStyleKey } = require('../lib/styles');
+const { hasStyle, getDefaultStyle } = require('../lib/styles');
 
 /**
  * 从文件或 stdin 读取内容
@@ -49,7 +49,6 @@ async function readInput(filePath) {
 async function shareCreateAction(options) {
   try {
     const { input, style, output, traceId, timeout } = options;
-    const resolvedStyle = resolveStyleKey(style);
 
     // 设置 API 全局配置
     setGlobalConfig({ traceId, timeout });
@@ -102,7 +101,7 @@ async function shareCreateAction(options) {
     }
 
     // 创建分享
-    const response = await createShare({ content, style: resolvedStyle });
+    const response = await createShare({ content, style });
 
     if (response.success) {
       const data = response.data;

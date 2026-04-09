@@ -3,13 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>内容排版及分享工具</title>
+  <title>内容排版及分享</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="/favicon.jpg">
   <link rel="shortcut icon" href="/favicon.jpg">
   <link rel="apple-touch-icon" href="/favicon.jpg">
-  <link rel="stylesheet" href="/brand.css?v=20260409-1">
 
   <!-- Markdown 渲染库 -->
   <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
@@ -19,7 +18,6 @@
   <script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
   
   <!-- Mermaid 图表库 -->
-  <script defer src="https://idata.demochen.com/script.js" data-website-id="3d029f2f-726c-4219-b9ea-485acf2cccb7"></script>
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
 
   <!-- AutoCorrect - 自动修复 CJK 空格和标点 -->
@@ -73,10 +71,6 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    [v-cloak] {
-      display: none !important;
-    }
-
     #app {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -108,23 +102,6 @@
       gap: 8px;
     }
 
-    .creator-info {
-      font-size: 12px;
-      font-weight: 400;
-      color: var(--color-tertiary);
-      margin-left: 12px;
-    }
-
-    .creator-info a {
-      color: var(--color-accent);
-      text-decoration: none;
-      transition: opacity 120ms;
-    }
-
-    .creator-info a:hover {
-      opacity: 0.7;
-    }
-
     .github-link {
       display: flex;
       align-items: center;
@@ -141,6 +118,32 @@
       background: var(--color-bg);
       color: var(--color-primary);
       transform: scale(1.05);
+    }
+
+    /* 设置按钮 */
+    .settings-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      color: var(--color-secondary);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 120ms;
+    }
+
+    .settings-btn:hover {
+      background: var(--color-bg);
+      color: var(--color-primary);
+      transform: scale(1.05);
+    }
+
+    .settings-btn svg {
+      width: 18px;
+      height: 18px;
     }
 
     .github-link svg {
@@ -1032,6 +1035,420 @@
       background: var(--color-tertiary);
     }
 
+    /* ==================== 主题管理弹窗样式 ==================== */
+
+    /* 弹窗遮罩 */
+    .settings-modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 200ms ease-out;
+    }
+
+    /* 弹窗内容 */
+    .settings-modal {
+      background: var(--color-surface);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      animation: slideUp 300ms ease-out;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* 弹窗头部 */
+    .settings-modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .settings-modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--color-primary);
+    }
+
+    .settings-modal-close {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: var(--color-bg);
+      border-radius: 6px;
+      font-size: 20px;
+      color: var(--color-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    .settings-modal-close:hover {
+      background: var(--color-border);
+      color: var(--color-primary);
+    }
+
+    /* 弹窗描述 */
+    .settings-modal-desc {
+      padding: 12px 20px;
+      margin: 0;
+      font-size: 13px;
+      color: var(--color-secondary);
+      background: var(--color-bg);
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    /* 主题列表 */
+    .settings-modal-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 0;
+    }
+
+    .style-list-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background 120ms;
+      border-bottom: 1px solid var(--color-light-border);
+    }
+
+    .style-list-item:last-child {
+      border-bottom: none;
+    }
+
+    .style-list-item:hover {
+      background: var(--color-bg);
+    }
+
+    .style-checkbox {
+      width: 18px;
+      height: 18px;
+      margin-right: 12px;
+      cursor: pointer;
+      accent-color: var(--color-accent);
+    }
+
+    .style-name {
+      flex: 1;
+      font-size: 14px;
+      color: var(--color-primary);
+    }
+
+    .style-star-badge {
+      font-size: 12px;
+      color: var(--color-accent);
+      margin-left: 8px;
+    }
+
+    .style-hidden-badge {
+      font-size: 11px;
+      color: var(--color-tertiary);
+      background: var(--color-light-border);
+      padding: 2px 6px;
+      border-radius: 4px;
+      margin-left: 8px;
+    }
+
+    /* 弹窗底部 */
+    .settings-modal-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-top: 1px solid var(--color-border);
+      background: var(--color-bg);
+      border-radius: 0 0 12px 12px;
+    }
+
+    .hidden-count {
+      font-size: 13px;
+      color: var(--color-secondary);
+    }
+
+    .reset-btn {
+      padding: 8px 16px;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 6px;
+      font-size: 13px;
+      color: var(--color-secondary);
+      cursor: pointer;
+      transition: all 120ms;
+    }
+
+    .reset-btn:hover {
+      background: var(--color-bg);
+      border-color: var(--color-accent);
+      color: var(--color-accent);
+    }
+
+    .reset-btn-primary {
+      background: var(--color-accent);
+      color: white;
+      border-color: var(--color-accent);
+    }
+
+    .reset-btn-primary:hover {
+      background: var(--color-accent-hover, #0052cc);
+      border-color: var(--color-accent-hover, #0052cc);
+      color: white;
+    }
+
+    /* ==================== 拖动排序样式 ==================== */
+
+    .settings-modal-drag {
+      max-width: 520px;
+    }
+
+    .drag-section {
+      margin-bottom: 24px;
+    }
+
+    .drag-section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--color-secondary);
+      margin-bottom: 12px;
+      padding: 0 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .drag-section-count {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-tertiary);
+      background: var(--color-bg);
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .drag-zone {
+      background: var(--color-bg);
+      border-radius: 12px;
+      padding: 12px;
+      min-height: 50px;
+      transition: all 200ms;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-content: flex-start;
+      border: 1px solid transparent;
+    }
+
+    .drag-zone-hidden {
+      background: var(--color-bg);
+      border: 1px dashed var(--color-border);
+    }
+
+    .drag-zone-empty {
+      text-align: center;
+      padding: 20px;
+      color: var(--color-tertiary);
+      font-size: 12px;
+      width: 100%;
+    }
+
+    .style-card-drag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      background: white;
+      border-radius: 6px;
+      cursor: grab;
+      transition: all 120ms;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--color-light-border);
+      font-size: 12px;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .style-card-drag:hover {
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+      border-color: var(--color-border);
+      transform: translateY(-1px);
+    }
+
+    .style-card-drag.dragging {
+      opacity: 0.5;
+      cursor: grabbing;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      transform: scale(1.02);
+    }
+
+    /* 隐藏主题和显示主题样式统一 */
+    .style-card-drag-hidden {
+      background: white;
+      opacity: 1;
+    }
+
+    .style-card-drag-hidden:hover {
+      background: white;
+      opacity: 1;
+    }
+
+    .style-card-drag.starred {
+      border-color: var(--color-accent);
+      background: rgba(0, 122, 255, 0.04);
+    }
+
+    .style-card-drag.starred .style-card-name {
+      color: var(--color-accent);
+    }
+
+    .drag-handle {
+      font-size: 12px;
+      color: var(--color-tertiary);
+      cursor: grab;
+      padding: 0 2px;
+      user-select: none;
+      opacity: 0.4;
+      font-weight: bold;
+    }
+
+    .style-card-drag:hover .drag-handle {
+      opacity: 0.8;
+    }
+
+    .style-card-drag.dragging .drag-handle {
+      cursor: grabbing;
+    }
+
+    .style-card-name {
+      font-size: 12px;
+      color: var(--color-primary);
+    }
+
+    .style-card-star {
+      font-size: 11px;
+    }
+
+    .style-card-action {
+      width: 18px;
+      height: 18px;
+      border: none;
+      background: transparent;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 120ms;
+      opacity: 0;
+    }
+
+    .style-card-drag:hover .style-card-action {
+      opacity: 0.6;
+    }
+
+    .style-card-action:hover {
+      background: var(--color-bg);
+      opacity: 1 !important;
+    }
+
+    /* 拖放时的视觉反馈 */
+    .drag-zone.drag-over {
+      background: rgba(0, 122, 255, 0.06);
+      border-color: var(--color-accent);
+    }
+
+    .drag-zone-hidden.drag-over {
+      background: rgba(0, 122, 255, 0.06);
+      border-color: var(--color-accent);
+      border-style: solid;
+    }
+
+    /* ==================== 右键菜单样式 ==================== */
+
+    .context-menu {
+      position: fixed;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      z-index: 3000;
+      min-width: 160px;
+      padding: 6px 0;
+      animation: contextMenuFadeIn 150ms ease-out;
+    }
+
+    @keyframes contextMenuFadeIn {
+      from {
+        opacity: 0;
+        transform: scale(0.95);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .context-menu-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2999;
+      background: transparent;
+    }
+
+    .context-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--color-primary);
+      transition: background 120ms;
+    }
+
+    .context-menu-item:hover {
+      background: var(--color-bg);
+    }
+
+    .context-menu-item-danger {
+      color: #e74c3c;
+    }
+
+    .context-menu-item-danger:hover {
+      background: #fdf2f2;
+    }
+
+    .context-menu-icon {
+      font-size: 14px;
+      width: 18px;
+      text-align: center;
+    }
+
+    .context-menu-divider {
+      height: 1px;
+      background: var(--color-light-border);
+      margin: 6px 0;
+    }
+
     /* 移动端响应式布局 */
     @media (max-width: 768px) {
       #app {
@@ -1463,16 +1880,27 @@
   </style>
 </head>
 <body>
-  <div id="app" v-cloak>
+  <div id="app">
     <!-- 顶部栏 -->
     <header class="header">
       <div class="logo">
-        <img src="/favicon.jpg" alt="内容排版及分享工具" width="20" height="20" style="width: 20px; height: 20px; border-radius: 6px; object-fit: cover;" />
-        <span>内容排版及分享工具</span>
+        <img src="/favicon.jpg" alt="内容排版及分享" width="20" height="20" style="width: 20px; height: 20px; border-radius: 6px; object-fit: cover;" />
+        <span>内容排版及分享</span>
       </div>
       <div class="header-actions">
         <nav class="header-links">
         </nav>
+        <!-- 设置按钮 -->
+        <button
+          class="settings-btn"
+          @click="toggleSettingsModal"
+          title="主题管理"
+        >
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="3"></circle>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+          </svg>
+        </button>
         <a href="https://github.com/foolgry/editor"
            target="_blank"
            rel="noopener noreferrer"
@@ -1492,23 +1920,25 @@
         <div class="styles-scroll-wrapper">
           <div class="styles-list">
             <!-- 收藏的样式 -->
-            <template v-if="visibleStarredStyles.length > 0">
+            <template v-if="starredStyles.length > 0">
               <div
-                v-for="styleKey in visibleStarredStyles"
+                v-for="styleKey in starredStyles"
                 :key="'star-' + styleKey"
                 class="style-card starred"
                 :class="{ active: currentStyle === styleKey }"
                 @click="currentStyle = styleKey"
+                @contextmenu.prevent="showStyleContextMenu($event, styleKey)"
               >
                 {{ getStyleName(styleKey) }}
               </div>
               <div style="width: 1px; height: 20px; background: var(--color-light-border); margin: 0 4px;"></div>
             </template>
 
-            <!-- 所有样式，添加推荐标识 -->
+            <!-- 所有样式（按照自定义顺序），过滤掉隐藏的（但收藏的主题和当前主题始终显示） -->
             <div
-              v-for="(style, key) in visibleStyles"
+              v-for="key in getOrderedStyles()"
               :key="key"
+              v-show="!isStyleHidden(key) || isStyleStarred(key) || currentStyle === key"
               class="style-card"
               :class="{
                 active: currentStyle === key,
@@ -1516,8 +1946,9 @@
                 recommended: isRecommended(key)
               }"
               @click="currentStyle = key"
+              @contextmenu.prevent="showStyleContextMenu($event, key)"
             >
-              {{ style.name }}
+              {{ STYLES[key].name }}
             </div>
           </div>
         </div>
@@ -1807,7 +2238,9 @@
           <p class="share-modal-desc">链接已生成，复制后发送给朋友：</p>
           <div class="share-url-box">
             <input type="text" :value="shareUrl" readonly ref="shareUrlInput">
-            <button @click="copyShareUrl" class="share-copy-btn" v-text="shareCopySuccess ? '✓ 已复制' : '复制链接'"></button>
+            <button @click="copyShareUrl" class="share-copy-btn">
+              {{ shareCopySuccess ? '✓ 已复制' : '复制链接' }}
+            </button>
           </div>
           <div class="share-actions">
             <a :href="shareUrl" target="_blank" class="share-link-btn">打开链接</a>
@@ -1816,17 +2249,157 @@
         </div>
       </div>
     </div>
+
+    <!-- 主题管理弹窗 -->
+    <div v-if="showSettingsModal" class="settings-modal-overlay" @click.self="toggleSettingsModal">
+      <div class="settings-modal settings-modal-drag">
+        <div class="settings-modal-header">
+          <h3>⚙️ 主题管理</h3>
+          <button class="settings-modal-close" @click="toggleSettingsModal">×</button>
+        </div>
+        <p class="settings-modal-desc">拖拽调整顺序和显示状态</p>
+        <div class="settings-modal-body">
+          <!-- 已显示的主题区域 -->
+          <div class="drag-section">
+            <div class="drag-section-title">
+              <span>显示中</span>
+              <span class="drag-section-count">{{ getVisibleStylesForSettings().length }} 个</span>
+            </div>
+            <div
+              class="drag-zone"
+              @dragover.prevent
+              @drop="handleDrop($event, 'visible')"
+              @dragenter.prevent
+            >
+              <template v-for="key in getOrderedStyles()">
+                <div
+                  v-if="!isStyleHidden(key)"
+                  :key="key"
+                  class="style-card-drag"
+                  :class="{
+                    starred: isStyleStarred(key),
+                    recommended: isRecommended(key),
+                    dragging: draggingStyle === key
+                  }"
+                  :data-key="key"
+                  draggable="true"
+                  @dragstart="handleDragStart($event, key, 'visible')"
+                  @dragend="handleDragEnd"
+                >
+                  <span class="drag-handle">⋮⋮</span>
+                  <span class="style-card-name">{{ STYLES[key].name }}</span>
+                  <span v-if="isStyleStarred(key)" class="style-card-star">⭐</span>
+                </div>
+              </template>
+              <div v-if="getVisibleStylesForSettings().length === 0" class="drag-zone-empty">
+                暂无显示的主题
+              </div>
+            </div>
+          </div>
+
+          <!-- 隐藏的主题区域 -->
+          <div class="drag-section">
+            <div class="drag-section-title">
+              <span>已隐藏</span>
+              <span class="drag-section-count">{{ getHiddenStylesForSettings().length }} 个</span>
+            </div>
+            <div
+              class="drag-zone drag-zone-hidden"
+              @dragover.prevent
+              @drop="handleDrop($event, 'hidden')"
+              @dragenter.prevent
+            >
+              <template v-for="key in getOrderedStyles()">
+                <div
+                  v-if="isStyleHidden(key)"
+                  :key="'hidden-' + key"
+                  class="style-card-drag style-card-drag-hidden"
+                  :class="{
+                    starred: isStyleStarred(key),
+                    dragging: draggingStyle === key
+                  }"
+                  :data-key="key"
+                  draggable="true"
+                  @dragstart="handleDragStart($event, key, 'hidden')"
+                  @dragend="handleDragEnd"
+                >
+                  <span class="drag-handle">⋮⋮</span>
+                  <span class="style-card-name">{{ STYLES[key].name }}</span>
+                  <span v-if="isStyleStarred(key)" class="style-card-star">⭐</span>
+                  <button
+                    class="style-card-action"
+                    @click.stop="moveToVisible(key)"
+                    title="显示主题"
+                  >👁️</button>
+                </div>
+              </template>
+              <div v-if="getHiddenStylesForSettings().length === 0" class="drag-zone-empty">
+                拖拽到此处隐藏
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="settings-modal-footer">
+          <button class="reset-btn" @click="resetStyleOrder">
+            恢复默认排序
+          </button>
+          <button class="reset-btn reset-btn-primary" @click="toggleSettingsModal">
+            完成
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 主题右键菜单 -->
+    <div
+      v-if="showContextMenu"
+      class="context-menu"
+      :style="{ left: contextMenuPosition.x + 'px', top: contextMenuPosition.y + 'px' }"
+      @click.stop
+    >
+      <div
+        class="context-menu-item"
+        @click="handleContextMenuAction('toggle-star')"
+      >
+        <span class="context-menu-icon">⭐</span>
+        <span>{{ isStyleStarred(contextMenuTargetStyle) ? '取消收藏' : '收藏主题' }}</span>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div
+        class="context-menu-item"
+        :class="{ 'context-menu-item-danger': !isStyleHidden(contextMenuTargetStyle) }"
+        @click="handleContextMenuAction('toggle-visibility')"
+      >
+        <span class="context-menu-icon">{{ isStyleHidden(contextMenuTargetStyle) ? '👁️' : '🙈' }}</span>
+        <span>{{ isStyleHidden(contextMenuTargetStyle) ? '显示主题' : '隐藏主题' }}</span>
+      </div>
+      <div class="context-menu-divider"></div>
+      <div
+        class="context-menu-item"
+        @click="handleContextMenuAction('open-settings')"
+      >
+        <span class="context-menu-icon">⚙️</span>
+        <span>主题管理...</span>
+      </div>
+    </div>
+
+    <!-- 右键菜单遮罩层（点击关闭） -->
+    <div
+      v-if="showContextMenu"
+      class="context-menu-overlay"
+      @click="closeContextMenu"
+    ></div>
   </div>
 
   <!-- 加载脚本 -->
-  <script src="styles.js?v=11"></script>
-  <script src="modules/image-store.js?v=6"></script>
-  <script src="modules/image-compressor.js?v=6"></script>
-  <script src="modules/image-host-manager.js?v=6"></script>
-  <script src="modules/text-utils.js?v=6"></script>
-  <script src="render-core.js?v=1"></script>
-  <script src="modules/render-utils.js?v=2"></script>
-  <script src="modules/editor-methods.js?v=12"></script>
-  <script src="app.js?v=11"></script>
+  <script src="styles.js?v=18"></script>
+  <script src="modules/image-store.js?v=18"></script>
+  <script src="modules/image-compressor.js?v=18"></script>
+  <script src="modules/image-host-manager.js?v=18"></script>
+  <script src="modules/text-utils.js?v=18"></script>
+  <script src="lib/autocorrect.js?v=18"></script>
+  <script src="render-core.js?v=18"></script>
+  <script src="modules/editor-methods.js?v=18"></script>
+  <script src="app.js?v=18"></script>
 </body>
 </html>

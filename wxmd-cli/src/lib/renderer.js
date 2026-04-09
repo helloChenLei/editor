@@ -7,7 +7,7 @@ const renderCore = require('../../../frontend/render-core.js');
 const MarkdownIt = require('markdown-it');
 const hljs = require('highlight.js');
 const { JSDOM } = require('jsdom');
-const { STYLES, resolveStyleKey } = require('./styles');
+const { STYLES } = require('./styles');
 
 function parseHtmlInNode(html) {
   return new JSDOM(html).window.document;
@@ -20,9 +20,8 @@ function parseHtmlInNode(html) {
  * @returns {string} HTML 内容
  */
 function renderMarkdown(markdown, styleKey = 'wechat-default') {
-  const resolvedStyleKey = resolveStyleKey(styleKey);
   return renderCore.renderMarkdown(markdown, {
-    styleKey: resolvedStyleKey,
+    styleKey,
     styles: STYLES,
     markdownit: MarkdownIt,
     hljs,
@@ -55,9 +54,8 @@ function stripCitationMarkers(content) {
  * @returns {string}
  */
 function applyInlineStyles(html, styleKey) {
-  const resolvedStyleKey = resolveStyleKey(styleKey);
   return renderCore.applyInlineStyles(html, {
-    styleKey: resolvedStyleKey,
+    styleKey,
     styles: STYLES,
     parseHtml: parseHtmlInNode,
   });

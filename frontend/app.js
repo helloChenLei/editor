@@ -10,45 +10,8 @@ const {
   ImageStore,
   ImageCompressor,
   ImageHostManager,
-  EditorMethods,
-  RenderUtils
+  EditorMethods
 } = wechatEditorModules;
-
-const createMarkdownRenderer = RenderUtils && typeof RenderUtils.createMarkdownRenderer === 'function'
-  ? RenderUtils.createMarkdownRenderer
-  : function() {
-    const escapeHtml = window.markdownit().utils.escapeHtml;
-    return window.markdownit({
-      html: true,
-      linkify: true,
-      typographer: false,
-      highlight: function (str, lang) {
-        if (lang && ['mermaid', 'flowchart', 'graph', 'sequenceDiagram', 'gantt', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'pie', 'gitGraph', 'requirementDiagram'].includes(lang)) {
-          const mermaidSource = escapeHtml(str);
-          return `<div class="mermaid" style="background: #fff; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center; overflow-x: auto;">${mermaidSource}</div>`;
-        }
-
-        const dots = '<div style="display: flex; align-items: center; gap: 6px; padding: 10px 12px; background: #2a2c33; border-bottom: 1px solid #1e1f24;"><span style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f56;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #ffbd2e;"></span><span style="width: 12px; height: 12px; border-radius: 50%; background: #27c93f;"></span></div>';
-
-        let codeContent = '';
-        if (lang && typeof hljs !== 'undefined') {
-          try {
-            if (hljs.getLanguage(lang)) {
-              codeContent = hljs.highlight(str, { language: lang }).value;
-            } else {
-              codeContent = escapeHtml(str);
-            }
-          } catch (error) {
-            codeContent = escapeHtml(str);
-          }
-        } else {
-          codeContent = escapeHtml(str);
-        }
-
-        return `<div style="margin: 20px 0; border-radius: 8px; overflow: hidden; background: #383a42; box-shadow: 0 2px 8px rgba(0,0,0,0.15);">${dots}<div style="padding: 16px; overflow-x: auto; background: #383a42;"><code style="display: block; color: #abb2bf; font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace; font-size: 14px; line-height: 1.6; white-space: pre;">${codeContent}</code></div></div>`;
-      }
-    });
-  };
 
 const SafeImageStore = ImageStore || class {
   async init() { console.warn('ImageStore 未加载，使用降级实现'); }
@@ -84,10 +47,9 @@ const editorApp = createApp({
     return {
       markdownInput: '',
       renderedContent: '',
-      currentStyle: 'wechat-anthropic',
+      currentStyle: 'wechat-default',
       copySuccess: false,
       starredStyles: [],
-      chatMemos: [],
       toast: {
         show: false,
         message: '',
@@ -115,9 +77,23 @@ const editorApp = createApp({
       sharing: false,               // 是否正在分享
       shareUrl: null,               // 分享链接
       shareError: null,             // 分享错误信息
-      shareServerUrl: window.location.origin,  // 自动使用当前页面域名
       shareCopySuccess: false,      // 分享链接复制成功状态
-      mermaidInitialized: false    // Mermaid 是否已初始化
+      shareServerUrl: window.location.origin, // 分享服务器地址
+      mermaidInitialized: false,    // Mermaid 是否已初始化
+
+      // 主题管理
+      hiddenStyles: [],             // 被隐藏的主题 ID 数组
+      showSettingsModal: false,     // 主题管理弹窗显示状态
+      styleOrder: [],               // 主题显示顺序（为空时使用默认顺序）
+
+      // 拖拽状态
+      draggingStyle: null,          // 正在拖拽的主题
+      dragSourceZone: null,         // 拖拽来源区域
+
+      // 右键菜单
+      showContextMenu: false,         // 是否显示右键菜单
+      contextMenuPosition: { x: 0, y: 0 }, // 右键菜单位置
+      contextMenuTargetStyle: null    // 右键菜单针对的主题
     };
   },
 
@@ -137,14 +113,24 @@ const editorApp = createApp({
       this.loadArticleHistory();
     }
 
+    // 加载隐藏的主题配置
+    if (typeof this.loadHiddenStyles === 'function') {
+      this.loadHiddenStyles();
+    }
+
+    // 加载主题顺序配置
+    if (typeof this.loadStyleOrder === 'function') {
+      this.loadStyleOrder();
+    }
+
     // 初始化图片存储管理器
     this.imageStore = new SafeImageStore();
     try {
       await this.imageStore.init();
       console.log('图片存储系统已就绪');
     } catch (error) {
-      // 某些浏览器隐私模式会禁用 IndexedDB；这里静默降级，避免用户一进站就收到错误提示。
-      console.warn('图片存储系统不可用，已降级为非持久化模式:', error);
+      console.error('图片存储系统初始化失败:', error);
+      this.showToast('图片存储系统初始化失败', 'error');
     }
 
     // 初始化图片压缩器（最大宽度 1920px，质量 85%）
@@ -159,16 +145,24 @@ const editorApp = createApp({
       this.initTurndownService();
     }
 
-    // 初始化 markdown-it
-    const md = createMarkdownRenderer({
-      markdownit: window.markdownit,
-      hljs: typeof hljs !== 'undefined' ? hljs : null
-    });
-
-    if (typeof this.patchMarkdownScanner === 'function') {
-      this.patchMarkdownScanner(md);
+    // 初始化 markdown-it（统一渲染内核）
+    const renderCore = window.WXMDRenderCore;
+    if (renderCore && typeof renderCore.createMarkdownParser === 'function') {
+      this.md = renderCore.createMarkdownParser({
+        markdownit: window.markdownit,
+        hljs: typeof hljs !== 'undefined' ? hljs : null
+      });
+    } else {
+      // 降级兼容：当共享渲染内核未加载时，仍可使用基础 markdown-it
+      this.md = window.markdownit({
+        html: true,
+        linkify: true,
+        typographer: false
+      });
+      if (typeof this.patchMarkdownScanner === 'function') {
+        this.patchMarkdownScanner(this.md);
+      }
     }
-    this.md = md;
 
     // 手动触发一次渲染（确保初始内容显示）
     this.$nextTick(() => {
@@ -176,33 +170,13 @@ const editorApp = createApp({
         this.renderMarkdown();
       }
     });
-  },
 
-  computed: {
-    visibleStyles() {
-      const entries = Object.entries(this.STYLES).filter(([, style]) => !style.hidden);
-      const order = {
-        'wechat-anthropic': 1,
-        'latepost-depth': 2,
-        'wechat-deepread': 3,
-        'wechat-claude-song': 4,
-      };
-      entries.sort(([keyA], [keyB]) => {
-        const a = order[keyA] ?? 100;
-        const b = order[keyB] ?? 100;
-        if (a !== b) return a - b;
-        const nameA = this.STYLES[keyA]?.name || '';
-        const nameB = this.STYLES[keyB]?.name || '';
-        return nameA.localeCompare(nameB, 'zh-CN');
-      });
-      return Object.fromEntries(entries);
-    },
-    visibleStarredStyles() {
-      return this.starredStyles.filter((styleKey) => {
-        const style = this.STYLES[styleKey];
-        return style && !style.hidden;
-      });
-    }
+    // 监听键盘事件（ESC 关闭右键菜单）
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.showContextMenu) {
+        this.showContextMenu = false;
+      }
+    });
   },
 
   watch: {
@@ -215,6 +189,24 @@ const editorApp = createApp({
       // 保存样式偏好
       if (typeof this.saveUserPreferences === 'function') {
         this.saveUserPreferences();
+      }
+    },
+    hiddenStyles: {
+      deep: true,
+      handler() {
+        // 自动保存隐藏的主题配置
+        if (typeof this.saveHiddenStyles === 'function') {
+          this.saveHiddenStyles();
+        }
+      }
+    },
+    styleOrder: {
+      deep: true,
+      handler() {
+        // 自动保存主题顺序配置
+        if (typeof this.saveStyleOrder === 'function') {
+          this.saveStyleOrder();
+        }
       }
     },
     markdownInput(newVal, oldVal) {

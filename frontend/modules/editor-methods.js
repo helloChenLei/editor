@@ -4,12 +4,6 @@
 (() => {
   const wechatEditorModules = window.WechatEditorModules || {};
   const EMPHASIS_MARKERS = wechatEditorModules.EMPHASIS_MARKERS || new Set([0x2A, 0x5F, 0x7E]);
-  const RenderUtils = wechatEditorModules.RenderUtils || {};
-  const resolveStyleKey = typeof RenderUtils.resolveStyleKey === 'function'
-    ? RenderUtils.resolveStyleKey
-    : function(styleKey) {
-      return STYLES[styleKey] ? styleKey : 'wechat-default';
-    };
   const isCjkLetter = wechatEditorModules.isCjkLetter || function(charCode) {
     if (!charCode || charCode < 0) {
       return false;
@@ -50,7 +44,7 @@
     loadUserPreferences() {
       try {
         // 加载样式偏好
-        const savedStyle = resolveStyleKey(localStorage.getItem('currentStyle'));
+        const savedStyle = localStorage.getItem('currentStyle');
         if (savedStyle && STYLES[savedStyle]) {
           this.currentStyle = savedStyle;
         }
@@ -73,10 +67,8 @@
     // 保存用户偏好设置
     saveUserPreferences() {
       try {
-        const styleKey = resolveStyleKey(this.currentStyle);
-
         // 保存当前样式
-        localStorage.setItem('currentStyle', styleKey);
+        localStorage.setItem('currentStyle', this.currentStyle);
 
         // 保存当前内容
         localStorage.setItem('markdownInput', this.markdownInput);
@@ -87,9 +79,77 @@
 
     // 加载默认示例文章
     loadDefaultExample() {
-      this.markdownInput = '';
-    },
+      this.markdownInput = `![](https://images.unsplash.com/photo-1499951360447-b19be8fe80f5?w=1200&h=400&fit=crop)
 
+# 公众号 Markdown 编辑器
+
+欢迎使用这款专为**微信公众号**设计的 Markdown 编辑器！✨
+
+## 🎯 核心功能
+
+### 1. 智能图片处理
+
+![](https://images.unsplash.com/photo-1618005198919-d3d4b5a92ead?w=800&h=500&fit=crop)
+
+- **粘贴即用**：支持从任何地方复制粘贴图片（截图、浏览器、文件管理器）
+- **自动压缩**：图片自动压缩，平均压缩 50%-80%
+- **本地存储**：使用 IndexedDB 持久化，刷新不丢失
+- **编辑流畅**：编辑器中使用短链接，告别卡顿
+
+### 2. 多图排版展示
+
+支持朋友圈式的多图网格布局，2-3 列自动排版：
+
+![](https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=600&h=400&fit=crop)
+![](https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=600&h=400&fit=crop)
+![](https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=600&h=400&fit=crop)
+
+### 3. 13 种精美样式
+
+1. **经典公众号系列**：默认、技术、优雅、深度阅读
+2. **传统媒体系列**：杂志、纽约时报、金融时报、Jony Ive
+3. **现代数字系列**：Wired、Medium、Apple、Claude、AI Coder
+
+### 4. 一键复制
+
+点击「复制到公众号」按钮，直接粘贴到公众号后台，格式完美保留！
+
+## 💻 代码示例
+
+\`\`\`javascript
+// 图片自动压缩并存储到 IndexedDB
+const compressedBlob = await imageCompressor.compress(file);
+await imageStore.saveImage(imageId, compressedBlob);
+
+// 编辑器中插入短链接
+const markdown = \`![图片](img://\${imageId})\`;
+\`\`\`
+
+## 📖 引用样式
+
+> 这是一段引用文字，展示编辑器的引用样式效果。
+>
+> 不同的样式主题会有不同的引用样式，试试切换样式看看效果！
+
+## 📊 表格支持
+
+| 功能 | 支持情况 | 说明 |
+|------|---------|------|
+| 图片粘贴 | ✅ | 100% 成功率 |
+| 刷新保留 | ✅ | IndexedDB 存储 |
+| 样式主题 | ✅ | 13 种精选样式 |
+| 代码高亮 | ✅ | 多语言支持 |
+
+---
+
+**💡 提示**：
+
+- 试着切换不同的样式主题，体验各种风格的排版效果
+- 粘贴图片试试智能压缩功能
+- 刷新页面看看内容是否保留
+
+**🌟 开源项目**：如果觉得有用，欢迎访问 [GitHub 仓库](https://github.com/foolgry/editor) 给个 Star！`;
+    },
 
     handleFileUpload(event) {
       const file = event.target.files[0];
@@ -140,8 +200,9 @@
     },
 
     preprocessMarkdown(content) {
-      if (typeof RenderUtils.preprocessMarkdown === 'function' && window.WXMDRenderCore) {
-        return RenderUtils.preprocessMarkdown(content);
+      const renderCore = window.WXMDRenderCore;
+      if (renderCore && typeof renderCore.preprocessMarkdown === 'function') {
+        return renderCore.preprocessMarkdown(content);
       }
 
       content = this.stripCitationMarkers(content);
@@ -277,16 +338,15 @@
     },
 
     applyInlineStyles(html) {
-      if (typeof RenderUtils.applyInlineStyles === 'function' && window.WXMDRenderCore) {
-        return RenderUtils.applyInlineStyles(html, {
-          styleKey: this.currentStyle,
-          styles: STYLES
+      const renderCore = window.WXMDRenderCore;
+      if (renderCore && typeof renderCore.applyInlineStyles === 'function') {
+        return renderCore.applyInlineStyles(html, {
+          styles: STYLES,
+          styleKey: this.currentStyle
         });
       }
 
-      const styleKey = resolveStyleKey(this.currentStyle);
-      const styleConfig = STYLES[styleKey] || STYLES['wechat-default'];
-      const style = styleConfig.styles;
+      const style = STYLES[this.currentStyle].styles;
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const headingInlineOverrides = {
@@ -707,8 +767,7 @@
         }
 
         // Section 容器包裹
-        const styleKey = resolveStyleKey(this.currentStyle);
-        const styleConfig = STYLES[styleKey] || STYLES['wechat-default'];
+        const styleConfig = STYLES[this.currentStyle];
         const containerBg = this.extractBackgroundColor(styleConfig.styles.container);
 
         if (containerBg && containerBg !== '#fff' && containerBg !== '#ffffff') {
@@ -864,7 +923,12 @@
 
           if (blob) {
             // 将 Blob 转为 Base64
-            return await this.blobToDataURL(blob);
+            return new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result);
+              reader.onerror = (error) => reject(new Error('FileReader failed: ' + error));
+              reader.readAsDataURL(blob);
+            });
           } else {
             console.warn(`图片 Blob 不存在: ${imageId}`);
             // 继续尝试用 fetch 方式（兜底）
@@ -887,56 +951,17 @@
         }
 
         const blob = await response.blob();
-        return await this.blobToDataURL(blob);
+
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result);
+          reader.onerror = (error) => reject(new Error('FileReader failed: ' + error));
+          reader.readAsDataURL(blob);
+        });
       } catch (error) {
         // CORS或网络错误时，抛出错误让外层处理
         throw new Error(`图片加载失败 (${src}): ${error.message}`);
       }
-    },
-
-    blobToDataURL(blob) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.onerror = (error) => reject(new Error('FileReader failed: ' + error));
-        reader.readAsDataURL(blob);
-      });
-    },
-
-    async inlineLocalImagesForSharing(content) {
-      if (!content || !content.includes('img://')) {
-        return content;
-      }
-
-      if (!this.imageStore) {
-        throw new Error('本地图片存储未初始化，无法分享图片');
-      }
-
-      const matches = Array.from(new Set(content.match(/img:\/\/[A-Za-z0-9_-]+/g) || []));
-      if (!matches.length) {
-        return content;
-      }
-
-      this.showToast(`正在处理 ${matches.length} 张本地图片...`, 'success');
-
-      const replacements = new Map();
-      for (const imageUrl of matches) {
-        const imageId = imageUrl.replace('img://', '');
-        const blob = await this.imageStore.getImageBlob(imageId);
-
-        if (!blob) {
-          throw new Error(`本地图片不存在或已失效：${imageId}`);
-        }
-
-        replacements.set(imageUrl, await this.blobToDataURL(blob));
-      }
-
-      let nextContent = content;
-      replacements.forEach((dataUrl, imageUrl) => {
-        nextContent = nextContent.split(imageUrl).join(dataUrl);
-      });
-
-      return nextContent;
     },
 
     extractBackgroundColor(styleString) {
@@ -965,7 +990,7 @@
     isRecommended(styleKey) {
       // 推荐的样式
       const recommended = ['nikkei', 'wechat-anthropic', 'wechat-ft', 'wechat-nyt', 'latepost-depth', 'wechat-tech'];
-      return recommended.includes(resolveStyleKey(styleKey));
+      return recommended.includes(styleKey);
     },
 
     toggleStarStyle(styleKey) {
@@ -989,9 +1014,8 @@
     },
 
     getStyleName(styleKey) {
-      const resolvedStyleKey = resolveStyleKey(styleKey);
-      const style = STYLES[resolvedStyleKey];
-      return style ? style.name.replace(/（隐藏）/g, '').trim() : styleKey;
+      const style = STYLES[styleKey];
+      return style ? style.name : styleKey;
     },
 
     showToast(message, type = 'success') {
@@ -1005,8 +1029,9 @@
     },
 
     patchMarkdownScanner(md) {
-      if (typeof RenderUtils.patchMarkdownScanner === 'function' && window.WXMDRenderCore) {
-        RenderUtils.patchMarkdownScanner(md);
+      const renderCore = window.WXMDRenderCore;
+      if (renderCore && typeof renderCore.patchMarkdownScanner === 'function') {
+        renderCore.patchMarkdownScanner(md);
         this.scanDelimsPatched = true;
         return;
       }
@@ -1909,8 +1934,7 @@
 
     // 获取背景色
     getBackgroundColor() {
-      const styleKey = resolveStyleKey(this.currentStyle);
-      const styleConfig = STYLES[styleKey];
+      const styleConfig = STYLES[this.currentStyle];
       if (styleConfig && styleConfig.styles && styleConfig.styles.container) {
         const bgColor = this.extractBackgroundColor(styleConfig.styles.container);
         return bgColor || '#FFFFFF';
@@ -1991,7 +2015,6 @@
         return;
       }
 
-      const styleKey = resolveStyleKey(this.currentStyle);
       const title = this.extractTitle(content);
       const now = Date.now();
 
@@ -2005,7 +2028,7 @@
           // 更新已存在的文章
           this.articleHistory[existingIndex].title = title;
           this.articleHistory[existingIndex].content = content;
-          this.articleHistory[existingIndex].style = styleKey;
+          this.articleHistory[existingIndex].style = this.currentStyle;
           this.articleHistory[existingIndex].updatedAt = now;
 
           // 移到最前面
@@ -2024,7 +2047,7 @@
         id: newArticleId,
         title: title,
         content: content,
-        style: styleKey,
+        style: this.currentStyle,
         createdAt: now,
         updatedAt: now
       };
@@ -2055,9 +2078,8 @@
 
       // 恢复内容和样式
       this.markdownInput = article.content;
-      const styleKey = resolveStyleKey(article.style);
-      if (styleKey && STYLES[styleKey]) {
-        this.currentStyle = styleKey;
+      if (article.style && STYLES[article.style]) {
+        this.currentStyle = article.style;
       }
 
       // 设置当前文章ID，后续编辑会更新这篇文章
@@ -2089,10 +2111,7 @@
         if (saved) {
           const data = JSON.parse(saved);
           if (data && Array.isArray(data.articles)) {
-            this.articleHistory = data.articles.map((article) => ({
-              ...article,
-              style: resolveStyleKey(article.style)
-            }));
+            this.articleHistory = data.articles;
           }
         }
       } catch (error) {
@@ -2170,30 +2189,20 @@
 
       this.sharing = true;
       this.shareError = null;
-      this.shareCopySuccess = false;
 
       try {
-        const styleKey = resolveStyleKey(this.currentStyle);
-        const contentToShare = await this.inlineLocalImagesForSharing(this.markdownInput);
         const response = await fetch(`${this.shareServerUrl}/api/share`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            content: contentToShare,
-            style: styleKey
+            content: this.markdownInput,
+            style: this.currentStyle
           })
         });
 
-        const contentType = response.headers.get('content-type') || '';
-        let data;
-        if (contentType.includes('application/json')) {
-          data = await response.json();
-        } else {
-          const text = await response.text();
-          throw new Error(`服务返回异常：${response.status} ${text.slice(0, 120)}`);
-        }
+        const data = await response.json();
 
         if (!response.ok) {
           throw new Error(data.error || '分享失败');
@@ -2221,7 +2230,7 @@
         await navigator.clipboard.writeText(this.shareUrl);
         this.shareCopySuccess = true;
         this.showToast('链接已复制到剪贴板', 'success');
-        
+
         setTimeout(() => {
           this.shareCopySuccess = false;
         }, 2000);
@@ -2236,11 +2245,387 @@
         document.body.removeChild(textarea);
         this.shareCopySuccess = true;
         this.showToast('链接已复制到剪贴板', 'success');
-        
+
         setTimeout(() => {
           this.shareCopySuccess = false;
         }, 2000);
       }
+    },
+
+    // ==================== 主题管理功能 ====================
+
+    // 从 localStorage 加载隐藏的主题配置
+    loadHiddenStyles() {
+      try {
+        const saved = localStorage.getItem('hiddenStyles');
+        if (saved) {
+          this.hiddenStyles = JSON.parse(saved);
+        }
+      } catch (error) {
+        console.error('加载隐藏主题配置失败:', error);
+        this.hiddenStyles = [];
+      }
+    },
+
+    // 保存隐藏的主题配置到 localStorage
+    saveHiddenStyles() {
+      try {
+        localStorage.setItem('hiddenStyles', JSON.stringify(this.hiddenStyles));
+      } catch (error) {
+        console.error('保存隐藏主题配置失败:', error);
+      }
+    },
+
+    // 切换主题的显示/隐藏状态
+    toggleStyleVisibility(styleKey) {
+      const index = this.hiddenStyles.indexOf(styleKey);
+      if (index > -1) {
+        // 取消隐藏
+        this.hiddenStyles.splice(index, 1);
+        this.showToast(`已显示「${this.getStyleName(styleKey)}」`, 'success');
+      } else {
+        // 隐藏主题
+        this.hiddenStyles.push(styleKey);
+
+        // 如果隐藏的是当前正在使用的主题，自动切换到第一个可用主题
+        if (styleKey === this.currentStyle) {
+          this.switchToFirstAvailableStyle();
+        }
+
+        this.showToast(`已隐藏「${this.getStyleName(styleKey)}」`, 'success');
+      }
+    },
+
+    // 重置所有主题为显示状态
+    resetHiddenStyles() {
+      this.hiddenStyles = [];
+      this.showToast('已重置为默认，所有主题都显示', 'success');
+    },
+
+    // 检查主题是否被隐藏
+    isStyleHidden(styleKey) {
+      return this.hiddenStyles.includes(styleKey);
+    },
+
+    // 切换到第一个可用的主题
+    switchToFirstAvailableStyle() {
+      // 获取所有可见的主题（未被隐藏的）
+      const visibleStyles = Object.keys(STYLES).filter(key => !this.isStyleHidden(key));
+
+      if (visibleStyles.length > 0) {
+        // 切换到第一个可见主题
+        this.currentStyle = visibleStyles[0];
+        this.showToast(`已自动切换到「${this.getStyleName(this.currentStyle)}」`, 'success');
+      } else {
+        // 如果没有可见主题，显示第一个主题（防止页面异常）
+        const firstKey = Object.keys(STYLES)[0];
+        if (firstKey) {
+          this.currentStyle = firstKey;
+          // 从隐藏列表中移除这个主题
+          const index = this.hiddenStyles.indexOf(firstKey);
+          if (index > -1) {
+            this.hiddenStyles.splice(index, 1);
+          }
+          this.showToast(`所有主题都被隐藏，已恢复「${this.getStyleName(firstKey)}」`, 'error');
+        }
+      }
+    },
+
+    // 切换主题管理弹窗的显示状态
+    toggleSettingsModal() {
+      this.showSettingsModal = !this.showSettingsModal;
+    },
+
+    // ==================== 主题顺序管理 ====================
+
+    // 从 localStorage 加载主题顺序
+    loadStyleOrder() {
+      try {
+        const saved = localStorage.getItem('styleOrder');
+        if (saved) {
+          const order = JSON.parse(saved);
+          if (Array.isArray(order)) {
+            // 过滤掉已删除的主题，保留有效key的顺序
+            const validKeys = order.filter(key => STYLES[key]);
+            // 获取新增的主题（在当前顺序中不存在的key）
+            const newKeys = Object.keys(STYLES).filter(key => !validKeys.includes(key));
+            // 合并：保留已有顺序，追加新增主题
+            this.styleOrder = [...validKeys, ...newKeys];
+          } else {
+            this.styleOrder = Object.keys(STYLES);
+          }
+        } else {
+          // 默认使用 STYLES 中的顺序
+          this.styleOrder = Object.keys(STYLES);
+        }
+      } catch (error) {
+        console.error('加载主题顺序失败:', error);
+        this.styleOrder = Object.keys(STYLES);
+      }
+    },
+
+    // 保存主题顺序到 localStorage
+    saveStyleOrder() {
+      try {
+        localStorage.setItem('styleOrder', JSON.stringify(this.styleOrder));
+      } catch (error) {
+        console.error('保存主题顺序失败:', error);
+      }
+    },
+
+    // 获取按顺序排列的主题列表
+    getOrderedStyles() {
+      // 如果有自定义顺序，使用它；否则使用默认顺序
+      if (this.styleOrder && this.styleOrder.length > 0) {
+        // 过滤掉不存在的主题（可能后续删除了）
+        return this.styleOrder.filter(key => STYLES[key]);
+      }
+      return Object.keys(STYLES);
+    },
+
+    // 获取可见主题数量
+    getVisibleStylesCount() {
+      return this.getOrderedStyles().filter(key => !this.isStyleHidden(key)).length;
+    },
+
+    // 获取设置弹窗用的可见主题列表（用于响应式更新）
+    getVisibleStylesForSettings() {
+      return this.getOrderedStyles().filter(key => !this.isStyleHidden(key));
+    },
+
+    // 获取设置弹窗用的隐藏主题列表（用于响应式更新）
+    getHiddenStylesForSettings() {
+      return this.getOrderedStyles().filter(key => this.isStyleHidden(key));
+    },
+
+    // 恢复默认排序
+    resetStyleOrder() {
+      // 只重置顺序，保留隐藏状态
+      this.styleOrder = Object.keys(STYLES);
+      this.showToast('已恢复默认排序', 'success');
+    },
+
+    // 将主题移动到隐藏区域
+    moveToHidden(styleKey) {
+      if (!this.hiddenStyles.includes(styleKey)) {
+        this.hiddenStyles.push(styleKey);
+        // 如果隐藏的是当前主题，自动切换
+        if (styleKey === this.currentStyle) {
+          this.switchToFirstAvailableStyle();
+        }
+        this.showToast(`已隐藏「${this.getStyleName(styleKey)}」`, 'success');
+      }
+    },
+
+    // 将主题移动到可见区域
+    moveToVisible(styleKey) {
+      const index = this.hiddenStyles.indexOf(styleKey);
+      if (index > -1) {
+        this.hiddenStyles.splice(index, 1);
+        this.showToast(`已显示「${this.getStyleName(styleKey)}」`, 'success');
+      }
+    },
+
+    // ==================== 拖拽功能 ====================
+
+    // 开始拖拽
+    handleDragStart(event, styleKey, sourceZone) {
+      this.draggingStyle = styleKey;
+      this.dragSourceZone = sourceZone;
+      event.dataTransfer.effectAllowed = 'move';
+      // 设置拖拽数据
+      event.dataTransfer.setData('text/plain', styleKey);
+    },
+
+    // 结束拖拽
+    handleDragEnd() {
+      this.draggingStyle = null;
+      this.dragSourceZone = null;
+    },
+
+    // 处理放置
+    handleDrop(event, targetZone) {
+      event.preventDefault();
+      const styleKey = event.dataTransfer.getData('text/plain');
+      if (!styleKey || !STYLES[styleKey]) return;
+
+      const sourceZone = this.dragSourceZone;
+
+      if (targetZone === 'hidden') {
+        // 拖放到隐藏区域
+        this.moveToHidden(styleKey);
+        // 将该主题移动到顺序列表末尾（以便下次显示时位置合理）
+        this.moveStyleToEnd(styleKey);
+      } else if (targetZone === 'visible') {
+        // 拖放到可见区域
+        if (sourceZone === 'hidden') {
+          // 从隐藏区域拖过来
+          this.moveToVisible(styleKey);
+        }
+        // 计算放置位置并重新排序
+        this.handleReorder(event, styleKey);
+      }
+    },
+
+    // 处理重排序
+    handleReorder(event, draggedKey) {
+      // 获取鼠标位置下方的元素（使用改进的算法）
+      const dragZone = event.currentTarget;
+      const { afterElement, insertAtStart } = this.getDropPosition(dragZone, event.clientX, event.clientY);
+
+      // 获取当前可见主题的顺序
+      const visibleKeys = this.getOrderedStyles().filter(key => !this.isStyleHidden(key));
+
+      // 移除被拖拽的元素（从可见列表中）
+      const draggedIndex = visibleKeys.indexOf(draggedKey);
+      if (draggedIndex > -1) {
+        visibleKeys.splice(draggedIndex, 1);
+      }
+
+      // 确定插入位置
+      let insertIndex;
+      if (insertAtStart) {
+        // 放到最前面
+        insertIndex = 0;
+      } else if (afterElement) {
+        // 放到指定元素后面
+        const afterKey = afterElement.dataset.key;
+        const afterIndex = visibleKeys.indexOf(afterKey);
+        if (afterIndex > -1) {
+          insertIndex = afterIndex + 1;
+        } else {
+          insertIndex = visibleKeys.length;
+        }
+      } else {
+        // 放到末尾
+        insertIndex = visibleKeys.length;
+      }
+
+      // 插入到新位置
+      visibleKeys.splice(insertIndex, 0, draggedKey);
+
+      // 将隐藏的主题追加到末尾，保持它们原有的相对顺序
+      const hiddenKeys = this.getOrderedStyles().filter(key => this.isStyleHidden(key));
+
+      // 合并可见和隐藏的主题
+      const newOrder = [...visibleKeys, ...hiddenKeys];
+
+      // 更新顺序
+      this.styleOrder = newOrder;
+    },
+
+    // 获取拖拽放置位置（支持横向和纵向布局）
+    getDropPosition(container, x, y) {
+      const draggableElements = [...container.querySelectorAll('.style-card-drag:not(.dragging)')];
+
+      if (draggableElements.length === 0) {
+        return { afterElement: null, insertAtStart: true };
+      }
+
+      // 获取容器边界
+      const containerRect = container.getBoundingClientRect();
+
+      // 检查是否在最前面（鼠标在第一个元素之前）
+      const firstElement = draggableElements[0];
+      const firstRect = firstElement.getBoundingClientRect();
+
+      // 判断鼠标是否在第一个元素的左上方
+      if (y < firstRect.bottom && x < firstRect.left + firstRect.width / 2) {
+        return { afterElement: null, insertAtStart: true };
+      }
+
+      // 遍历所有元素，找到鼠标位置后的元素
+      let closestElement = null;
+      let closestDistance = Infinity;
+
+      for (const element of draggableElements) {
+        const rect = element.getBoundingClientRect();
+
+        // 计算元素中心点
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // 计算鼠标到元素中心点的距离
+        const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+
+        // 只考虑鼠标前方的元素
+        const isAfterMouse = x < centerX || (x < rect.right && y < centerY);
+
+        if (isAfterMouse && distance < closestDistance) {
+          closestDistance = distance;
+          closestElement = element;
+        }
+      }
+
+      return { afterElement: closestElement, insertAtStart: false };
+    },
+
+    // 将主题移动到顺序列表末尾
+    moveStyleToEnd(styleKey) {
+      const currentOrder = [...this.getOrderedStyles()];
+      const index = currentOrder.indexOf(styleKey);
+      if (index > -1) {
+        currentOrder.splice(index, 1);
+        currentOrder.push(styleKey);
+        this.styleOrder = currentOrder;
+      }
+    },
+
+    // ==================== 右键菜单功能 ====================
+
+    // 显示主题右键菜单
+    showStyleContextMenu(event, styleKey) {
+      // 阻止默认右键菜单
+      event.preventDefault();
+
+      // 设置目标主题
+      this.contextMenuTargetStyle = styleKey;
+
+      // 计算菜单位置（确保不超出屏幕）
+      const menuWidth = 160;
+      const menuHeight = 120; // 估计高度
+      let x = event.clientX;
+      let y = event.clientY;
+
+      // 检查右边界
+      if (x + menuWidth > window.innerWidth) {
+        x = window.innerWidth - menuWidth - 10;
+      }
+
+      // 检查下边界
+      if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 10;
+      }
+
+      this.contextMenuPosition = { x, y };
+      this.showContextMenu = true;
+    },
+
+    // 关闭右键菜单
+    closeContextMenu() {
+      this.showContextMenu = false;
+      this.contextMenuTargetStyle = null;
+    },
+
+    // 处理右键菜单操作
+    handleContextMenuAction(action) {
+      const styleKey = this.contextMenuTargetStyle;
+      if (!styleKey) return;
+
+      switch (action) {
+        case 'toggle-star':
+          this.toggleStarStyle(styleKey);
+          break;
+        case 'toggle-visibility':
+          this.toggleStyleVisibility(styleKey);
+          break;
+        case 'open-settings':
+          this.showSettingsModal = true;
+          break;
+      }
+
+      // 关闭菜单
+      this.closeContextMenu();
     }
   };
 
