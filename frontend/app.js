@@ -77,9 +77,23 @@ const editorApp = createApp({
       sharing: false,               // 是否正在分享
       shareUrl: null,               // 分享链接
       shareError: null,             // 分享错误信息
-      shareServerUrl: window.location.origin,  // 自动使用当前页面域名
       shareCopySuccess: false,      // 分享链接复制成功状态
-      mermaidInitialized: false    // Mermaid 是否已初始化
+      shareServerUrl: window.location.origin, // 分享服务器地址
+      mermaidInitialized: false,    // Mermaid 是否已初始化
+
+      // 主题管理
+      hiddenStyles: [],             // 被隐藏的主题 ID 数组
+      showSettingsModal: false,     // 主题管理弹窗显示状态
+      styleOrder: [],               // 主题显示顺序（为空时使用默认顺序）
+
+      // 拖拽状态
+      draggingStyle: null,          // 正在拖拽的主题
+      dragSourceZone: null,         // 拖拽来源区域
+
+      // 右键菜单
+      showContextMenu: false,         // 是否显示右键菜单
+      contextMenuPosition: { x: 0, y: 0 }, // 右键菜单位置
+      contextMenuTargetStyle: null    // 右键菜单针对的主题
     };
   },
 
@@ -97,6 +111,16 @@ const editorApp = createApp({
     // 加载文章历史记录
     if (typeof this.loadArticleHistory === 'function') {
       this.loadArticleHistory();
+    }
+
+    // 加载隐藏的主题配置
+    if (typeof this.loadHiddenStyles === 'function') {
+      this.loadHiddenStyles();
+    }
+
+    // 加载主题顺序配置
+    if (typeof this.loadStyleOrder === 'function') {
+      this.loadStyleOrder();
     }
 
     // 初始化图片存储管理器
@@ -146,6 +170,13 @@ const editorApp = createApp({
         this.renderMarkdown();
       }
     });
+
+    // 监听键盘事件（ESC 关闭右键菜单）
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.showContextMenu) {
+        this.showContextMenu = false;
+      }
+    });
   },
 
   watch: {
@@ -158,6 +189,24 @@ const editorApp = createApp({
       // 保存样式偏好
       if (typeof this.saveUserPreferences === 'function') {
         this.saveUserPreferences();
+      }
+    },
+    hiddenStyles: {
+      deep: true,
+      handler() {
+        // 自动保存隐藏的主题配置
+        if (typeof this.saveHiddenStyles === 'function') {
+          this.saveHiddenStyles();
+        }
+      }
+    },
+    styleOrder: {
+      deep: true,
+      handler() {
+        // 自动保存主题顺序配置
+        if (typeof this.saveStyleOrder === 'function') {
+          this.saveStyleOrder();
+        }
       }
     },
     markdownInput(newVal, oldVal) {

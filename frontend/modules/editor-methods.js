@@ -2230,7 +2230,7 @@ const markdown = \`![图片](img://\${imageId})\`;
         await navigator.clipboard.writeText(this.shareUrl);
         this.shareCopySuccess = true;
         this.showToast('链接已复制到剪贴板', 'success');
-        
+
         setTimeout(() => {
           this.shareCopySuccess = false;
         }, 2000);
@@ -2245,11 +2245,387 @@ const markdown = \`![图片](img://\${imageId})\`;
         document.body.removeChild(textarea);
         this.shareCopySuccess = true;
         this.showToast('链接已复制到剪贴板', 'success');
-        
+
         setTimeout(() => {
           this.shareCopySuccess = false;
         }, 2000);
       }
+    },
+
+    // ==================== 主题管理功能 ====================
+
+    // 从 localStorage 加载隐藏的主题配置
+    loadHiddenStyles() {
+      try {
+        const saved = localStorage.getItem('hiddenStyles');
+        if (saved) {
+          this.hiddenStyles = JSON.parse(saved);
+        }
+      } catch (error) {
+        console.error('加载隐藏主题配置失败:', error);
+        this.hiddenStyles = [];
+      }
+    },
+
+    // 保存隐藏的主题配置到 localStorage
+    saveHiddenStyles() {
+      try {
+        localStorage.setItem('hiddenStyles', JSON.stringify(this.hiddenStyles));
+      } catch (error) {
+        console.error('保存隐藏主题配置失败:', error);
+      }
+    },
+
+    // 切换主题的显示/隐藏状态
+    toggleStyleVisibility(styleKey) {
+      const index = this.hiddenStyles.indexOf(styleKey);
+      if (index > -1) {
+        // 取消隐藏
+        this.hiddenStyles.splice(index, 1);
+        this.showToast(`已显示「${this.getStyleName(styleKey)}」`, 'success');
+      } else {
+        // 隐藏主题
+        this.hiddenStyles.push(styleKey);
+
+        // 如果隐藏的是当前正在使用的主题，自动切换到第一个可用主题
+        if (styleKey === this.currentStyle) {
+          this.switchToFirstAvailableStyle();
+        }
+
+        this.showToast(`已隐藏「${this.getStyleName(styleKey)}」`, 'success');
+      }
+    },
+
+    // 重置所有主题为显示状态
+    resetHiddenStyles() {
+      this.hiddenStyles = [];
+      this.showToast('已重置为默认，所有主题都显示', 'success');
+    },
+
+    // 检查主题是否被隐藏
+    isStyleHidden(styleKey) {
+      return this.hiddenStyles.includes(styleKey);
+    },
+
+    // 切换到第一个可用的主题
+    switchToFirstAvailableStyle() {
+      // 获取所有可见的主题（未被隐藏的）
+      const visibleStyles = Object.keys(STYLES).filter(key => !this.isStyleHidden(key));
+
+      if (visibleStyles.length > 0) {
+        // 切换到第一个可见主题
+        this.currentStyle = visibleStyles[0];
+        this.showToast(`已自动切换到「${this.getStyleName(this.currentStyle)}」`, 'success');
+      } else {
+        // 如果没有可见主题，显示第一个主题（防止页面异常）
+        const firstKey = Object.keys(STYLES)[0];
+        if (firstKey) {
+          this.currentStyle = firstKey;
+          // 从隐藏列表中移除这个主题
+          const index = this.hiddenStyles.indexOf(firstKey);
+          if (index > -1) {
+            this.hiddenStyles.splice(index, 1);
+          }
+          this.showToast(`所有主题都被隐藏，已恢复「${this.getStyleName(firstKey)}」`, 'error');
+        }
+      }
+    },
+
+    // 切换主题管理弹窗的显示状态
+    toggleSettingsModal() {
+      this.showSettingsModal = !this.showSettingsModal;
+    },
+
+    // ==================== 主题顺序管理 ====================
+
+    // 从 localStorage 加载主题顺序
+    loadStyleOrder() {
+      try {
+        const saved = localStorage.getItem('styleOrder');
+        if (saved) {
+          const order = JSON.parse(saved);
+          if (Array.isArray(order)) {
+            // 过滤掉已删除的主题，保留有效key的顺序
+            const validKeys = order.filter(key => STYLES[key]);
+            // 获取新增的主题（在当前顺序中不存在的key）
+            const newKeys = Object.keys(STYLES).filter(key => !validKeys.includes(key));
+            // 合并：保留已有顺序，追加新增主题
+            this.styleOrder = [...validKeys, ...newKeys];
+          } else {
+            this.styleOrder = Object.keys(STYLES);
+          }
+        } else {
+          // 默认使用 STYLES 中的顺序
+          this.styleOrder = Object.keys(STYLES);
+        }
+      } catch (error) {
+        console.error('加载主题顺序失败:', error);
+        this.styleOrder = Object.keys(STYLES);
+      }
+    },
+
+    // 保存主题顺序到 localStorage
+    saveStyleOrder() {
+      try {
+        localStorage.setItem('styleOrder', JSON.stringify(this.styleOrder));
+      } catch (error) {
+        console.error('保存主题顺序失败:', error);
+      }
+    },
+
+    // 获取按顺序排列的主题列表
+    getOrderedStyles() {
+      // 如果有自定义顺序，使用它；否则使用默认顺序
+      if (this.styleOrder && this.styleOrder.length > 0) {
+        // 过滤掉不存在的主题（可能后续删除了）
+        return this.styleOrder.filter(key => STYLES[key]);
+      }
+      return Object.keys(STYLES);
+    },
+
+    // 获取可见主题数量
+    getVisibleStylesCount() {
+      return this.getOrderedStyles().filter(key => !this.isStyleHidden(key)).length;
+    },
+
+    // 获取设置弹窗用的可见主题列表（用于响应式更新）
+    getVisibleStylesForSettings() {
+      return this.getOrderedStyles().filter(key => !this.isStyleHidden(key));
+    },
+
+    // 获取设置弹窗用的隐藏主题列表（用于响应式更新）
+    getHiddenStylesForSettings() {
+      return this.getOrderedStyles().filter(key => this.isStyleHidden(key));
+    },
+
+    // 恢复默认排序
+    resetStyleOrder() {
+      // 只重置顺序，保留隐藏状态
+      this.styleOrder = Object.keys(STYLES);
+      this.showToast('已恢复默认排序', 'success');
+    },
+
+    // 将主题移动到隐藏区域
+    moveToHidden(styleKey) {
+      if (!this.hiddenStyles.includes(styleKey)) {
+        this.hiddenStyles.push(styleKey);
+        // 如果隐藏的是当前主题，自动切换
+        if (styleKey === this.currentStyle) {
+          this.switchToFirstAvailableStyle();
+        }
+        this.showToast(`已隐藏「${this.getStyleName(styleKey)}」`, 'success');
+      }
+    },
+
+    // 将主题移动到可见区域
+    moveToVisible(styleKey) {
+      const index = this.hiddenStyles.indexOf(styleKey);
+      if (index > -1) {
+        this.hiddenStyles.splice(index, 1);
+        this.showToast(`已显示「${this.getStyleName(styleKey)}」`, 'success');
+      }
+    },
+
+    // ==================== 拖拽功能 ====================
+
+    // 开始拖拽
+    handleDragStart(event, styleKey, sourceZone) {
+      this.draggingStyle = styleKey;
+      this.dragSourceZone = sourceZone;
+      event.dataTransfer.effectAllowed = 'move';
+      // 设置拖拽数据
+      event.dataTransfer.setData('text/plain', styleKey);
+    },
+
+    // 结束拖拽
+    handleDragEnd() {
+      this.draggingStyle = null;
+      this.dragSourceZone = null;
+    },
+
+    // 处理放置
+    handleDrop(event, targetZone) {
+      event.preventDefault();
+      const styleKey = event.dataTransfer.getData('text/plain');
+      if (!styleKey || !STYLES[styleKey]) return;
+
+      const sourceZone = this.dragSourceZone;
+
+      if (targetZone === 'hidden') {
+        // 拖放到隐藏区域
+        this.moveToHidden(styleKey);
+        // 将该主题移动到顺序列表末尾（以便下次显示时位置合理）
+        this.moveStyleToEnd(styleKey);
+      } else if (targetZone === 'visible') {
+        // 拖放到可见区域
+        if (sourceZone === 'hidden') {
+          // 从隐藏区域拖过来
+          this.moveToVisible(styleKey);
+        }
+        // 计算放置位置并重新排序
+        this.handleReorder(event, styleKey);
+      }
+    },
+
+    // 处理重排序
+    handleReorder(event, draggedKey) {
+      // 获取鼠标位置下方的元素（使用改进的算法）
+      const dragZone = event.currentTarget;
+      const { afterElement, insertAtStart } = this.getDropPosition(dragZone, event.clientX, event.clientY);
+
+      // 获取当前可见主题的顺序
+      const visibleKeys = this.getOrderedStyles().filter(key => !this.isStyleHidden(key));
+
+      // 移除被拖拽的元素（从可见列表中）
+      const draggedIndex = visibleKeys.indexOf(draggedKey);
+      if (draggedIndex > -1) {
+        visibleKeys.splice(draggedIndex, 1);
+      }
+
+      // 确定插入位置
+      let insertIndex;
+      if (insertAtStart) {
+        // 放到最前面
+        insertIndex = 0;
+      } else if (afterElement) {
+        // 放到指定元素后面
+        const afterKey = afterElement.dataset.key;
+        const afterIndex = visibleKeys.indexOf(afterKey);
+        if (afterIndex > -1) {
+          insertIndex = afterIndex + 1;
+        } else {
+          insertIndex = visibleKeys.length;
+        }
+      } else {
+        // 放到末尾
+        insertIndex = visibleKeys.length;
+      }
+
+      // 插入到新位置
+      visibleKeys.splice(insertIndex, 0, draggedKey);
+
+      // 将隐藏的主题追加到末尾，保持它们原有的相对顺序
+      const hiddenKeys = this.getOrderedStyles().filter(key => this.isStyleHidden(key));
+
+      // 合并可见和隐藏的主题
+      const newOrder = [...visibleKeys, ...hiddenKeys];
+
+      // 更新顺序
+      this.styleOrder = newOrder;
+    },
+
+    // 获取拖拽放置位置（支持横向和纵向布局）
+    getDropPosition(container, x, y) {
+      const draggableElements = [...container.querySelectorAll('.style-card-drag:not(.dragging)')];
+
+      if (draggableElements.length === 0) {
+        return { afterElement: null, insertAtStart: true };
+      }
+
+      // 获取容器边界
+      const containerRect = container.getBoundingClientRect();
+
+      // 检查是否在最前面（鼠标在第一个元素之前）
+      const firstElement = draggableElements[0];
+      const firstRect = firstElement.getBoundingClientRect();
+
+      // 判断鼠标是否在第一个元素的左上方
+      if (y < firstRect.bottom && x < firstRect.left + firstRect.width / 2) {
+        return { afterElement: null, insertAtStart: true };
+      }
+
+      // 遍历所有元素，找到鼠标位置后的元素
+      let closestElement = null;
+      let closestDistance = Infinity;
+
+      for (const element of draggableElements) {
+        const rect = element.getBoundingClientRect();
+
+        // 计算元素中心点
+        const centerX = rect.left + rect.width / 2;
+        const centerY = rect.top + rect.height / 2;
+
+        // 计算鼠标到元素中心点的距离
+        const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+
+        // 只考虑鼠标前方的元素
+        const isAfterMouse = x < centerX || (x < rect.right && y < centerY);
+
+        if (isAfterMouse && distance < closestDistance) {
+          closestDistance = distance;
+          closestElement = element;
+        }
+      }
+
+      return { afterElement: closestElement, insertAtStart: false };
+    },
+
+    // 将主题移动到顺序列表末尾
+    moveStyleToEnd(styleKey) {
+      const currentOrder = [...this.getOrderedStyles()];
+      const index = currentOrder.indexOf(styleKey);
+      if (index > -1) {
+        currentOrder.splice(index, 1);
+        currentOrder.push(styleKey);
+        this.styleOrder = currentOrder;
+      }
+    },
+
+    // ==================== 右键菜单功能 ====================
+
+    // 显示主题右键菜单
+    showStyleContextMenu(event, styleKey) {
+      // 阻止默认右键菜单
+      event.preventDefault();
+
+      // 设置目标主题
+      this.contextMenuTargetStyle = styleKey;
+
+      // 计算菜单位置（确保不超出屏幕）
+      const menuWidth = 160;
+      const menuHeight = 120; // 估计高度
+      let x = event.clientX;
+      let y = event.clientY;
+
+      // 检查右边界
+      if (x + menuWidth > window.innerWidth) {
+        x = window.innerWidth - menuWidth - 10;
+      }
+
+      // 检查下边界
+      if (y + menuHeight > window.innerHeight) {
+        y = window.innerHeight - menuHeight - 10;
+      }
+
+      this.contextMenuPosition = { x, y };
+      this.showContextMenu = true;
+    },
+
+    // 关闭右键菜单
+    closeContextMenu() {
+      this.showContextMenu = false;
+      this.contextMenuTargetStyle = null;
+    },
+
+    // 处理右键菜单操作
+    handleContextMenuAction(action) {
+      const styleKey = this.contextMenuTargetStyle;
+      if (!styleKey) return;
+
+      switch (action) {
+        case 'toggle-star':
+          this.toggleStarStyle(styleKey);
+          break;
+        case 'toggle-visibility':
+          this.toggleStyleVisibility(styleKey);
+          break;
+        case 'open-settings':
+          this.showSettingsModal = true;
+          break;
+      }
+
+      // 关闭菜单
+      this.closeContextMenu();
     }
   };
 
