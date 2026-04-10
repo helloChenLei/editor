@@ -299,45 +299,67 @@ const editorApp = createApp({
 
     bindEditorScrollSync() {
       const editor = this.$refs.markdownInput;
+      const preview = this.$refs.previewContent;
 
-      if (!editor || this._syncPreviewScrollHandler) {
+      if (!editor || !preview || this._scrollSyncHandlers) {
         return;
       }
 
-      this._syncPreviewScrollHandler = () => {
-        this.syncPreviewScroll();
+      this._scrollSyncHandlers = {
+        editor: () => {
+          this.syncScrollPosition(editor, preview);
+        },
+        preview: () => {
+          this.syncScrollPosition(preview, editor);
+        }
       };
-      editor.addEventListener('scroll', this._syncPreviewScrollHandler, { passive: true });
+      editor.addEventListener('scroll', this._scrollSyncHandlers.editor, { passive: true });
+      preview.addEventListener('scroll', this._scrollSyncHandlers.preview, { passive: true });
       this.syncPreviewScroll();
     },
 
     unbindEditorScrollSync() {
       const editor = this.$refs.markdownInput;
+      const preview = this.$refs.previewContent;
 
-      if (editor && this._syncPreviewScrollHandler) {
-        editor.removeEventListener('scroll', this._syncPreviewScrollHandler);
+      if (this._scrollSyncHandlers) {
+        if (editor) {
+          editor.removeEventListener('scroll', this._scrollSyncHandlers.editor);
+        }
+        if (preview) {
+          preview.removeEventListener('scroll', this._scrollSyncHandlers.preview);
+        }
       }
-      this._syncPreviewScrollHandler = null;
+      this._scrollSyncHandlers = null;
     },
 
     syncPreviewScroll() {
       const editor = this.$refs.markdownInput || this.$el?.querySelector('.markdown-input');
       const preview = this.$refs.previewContent || this.$el?.querySelector('.preview-content');
 
-      if (!editor || !preview) {
+      this.syncScrollPosition(editor, preview);
+    },
+
+    syncScrollPosition(source, target) {
+      if (!source || !target || this._isSyncingScroll) {
         return;
       }
 
-      const editorScrollableHeight = editor.scrollHeight - editor.clientHeight;
-      const previewScrollableHeight = preview.scrollHeight - preview.clientHeight;
+      const sourceScrollableHeight = source.scrollHeight - source.clientHeight;
+      const targetScrollableHeight = target.scrollHeight - target.clientHeight;
+      const targetScrollTop = sourceScrollableHeight > 0 && targetScrollableHeight > 0
+        ? (source.scrollTop / sourceScrollableHeight) * targetScrollableHeight
+        : 0;
 
-      if (editorScrollableHeight <= 0 || previewScrollableHeight <= 0) {
-        preview.scrollTop = 0;
+      if (Math.abs(target.scrollTop - targetScrollTop) < 1) {
         return;
       }
 
-      const scrollRatio = editor.scrollTop / editorScrollableHeight;
-      preview.scrollTop = scrollRatio * previewScrollableHeight;
+      this._isSyncingScroll = true;
+      target.scrollTop = targetScrollTop;
+      window.requestAnimationFrame(() => {
+        this._isSyncingScroll = false;
+      });
     },
 
     ...SafeEditorMethods
