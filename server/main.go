@@ -465,22 +465,22 @@ func generateSharePageHTML(share Share) string {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>__WX_EDITOR_TITLE__</title>
   <meta name="description" content="__WX_EDITOR_DESCRIPTION__">
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
-  <link rel="alternate icon" href="/favicon.svg">
-  <link rel="mask-icon" href="/favicon.svg" color="#0066FF">
+  <link rel="icon" type="image/jpeg" href="/favicon.jpg">
+  <link rel="shortcut icon" href="/favicon.jpg">
+  <link rel="apple-touch-icon" href="/favicon.jpg">
   
   <!-- Markdown 渲染库 -->
-  <script src="https://cdn.jsdelivr.net/npm/markdown-it@14.0.0/dist/markdown-it.min.js"></script>
+  <script src="/vendor/markdown-it.min.js"></script>
   
   <!-- 代码高亮库 -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/styles/atom-one-dark.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+  <link rel="stylesheet" href="/vendor/atom-one-dark.min.css">
+  <script src="/vendor/highlight.min.js"></script>
   
   <!-- Mermaid 图表库 -->
-  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="/vendor/mermaid.min.js"></script>
   
   <!-- Vue.js -->
-  <script src="https://cdn.jsdelivr.net/npm/vue@3.4.15/dist/vue.global.prod.js"></script>
+  <script src="/vendor/vue.global.prod.js"></script>
   
   <style>
     :root {
